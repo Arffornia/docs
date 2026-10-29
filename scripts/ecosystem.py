@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Render the Arffornia ecosystem map (profile/ecosystem.{light,dark}.svg).
 
-A hub (the Arffornia brand) framed by three compartments of projects, standing on MaaS,
-the platform that hosts them. Everything is driven by the data below: add a project to
-PROJECTS (and, if needed, a group to GROUPS) and run
+The Arffornia hub, fed by three groups of projects (Play above, Game left, Toolkit right),
+standing on MaaS, the platform it runs on. Everything is driven by the data below: add a
+project to PROJECTS (and, if needed, a group to GROUPS) and run
 
     python3 scripts/ecosystem.py profile && cp profile/ecosystem.*.svg docs/assets/
 
@@ -21,64 +21,75 @@ from fontTools.pens.transformPen import TransformPen
 # --------------------------------------------------------------------------- content
 ORG = "Arffornia"  # repos written without an owner live in this organisation
 
-# slot: "top" (row above the hub), "left" or "right" (columns beside the hub)
+# slot: "top" (row above the hub), "left" (full cards beside the hub), "right" (compact list)
 GROUPS = {
-    "play": dict(label="Play", tag="what players touch", slot="top"),
-    "game": dict(label="Game", tag="the modded server", slot="left"),
-    "tools": dict(label="Toolkit", tag="built from scratch", slot="right"),
+    "play": dict(label="Play", tag="what players use", slot="top"),
+    "game": dict(label="Game", tag="the server itself", slot="left"),
+    "tools": dict(label="Toolkit", tag="how it's built", slot="right"),
 }
 
-# (group, display name, repo(s), one-line benefit[, chips])
+# (group, title, repo slugs, one short line; **bold** marks a figure). Toolkit lines are not shown.
 PROJECTS = [
-    ("play", "Arffornia Launcher", "Arffornia_Launcher_V.5.2", "Microsoft login, Java, modpack and shaders in one click"),
-    ("play", "Arffornia Website", "Arffornia_Website", "Accounts, shop, votes, progression editor and public API"),
-    ("play", "Keycloak theme", "keycloak-theme-arffornia", "The sign-in pages, in Arffornia colours"),
-    ("game", "Arffornia Mod", "Arffornia_Mods", "Progression graph, Space Elevator, Crafter, machines to come"),
-    ("game", "Arffornia Provisioning", "Arffornia_Provisioning", "Around 330 mods, defined once and kept up to date"),
-    ("game", "Arffornia Proxy", "Arffornia_Proxy", "Votes from server lists, rewarded in game"),
-    ("tools", "Nexus libraries", "Nexus_*", "The launcher's TypeScript stack", ["Mods", "Java", "Logger", "Saver"]),
-    ("tools", "Arffornia Docs + Noodle", "docs · TheGostsniperfr/Noodle", "Architecture docs, with diagrams written as code"),
-    ("tools", "Agent Kit", "agent-kit", "The AI agent harness the project is built with"),
+    ("play", "Launcher", ["Arffornia_Launcher_V.5.2"], "Sign in, install, play."),
+    ("play", "Website", ["Arffornia_Website"], "Accounts, shop, votes, public API"),
+    ("play", "Sign-in", ["keycloak-theme-arffornia"], "Arffornia account pages"),
+    ("game", "Mod", ["Arffornia_Mods"], "Milestones, machines and the Space Elevator"),
+    ("game", "Provisioning", ["Arffornia_Provisioning"], "**330 mods,** declared once, always current"),
+    ("game", "Votes", ["Arffornia_Proxy"], "Server-list votes, rewarded in game"),
+    ("tools", "Nexus libraries", ["Nexus_*"], "The launcher's TypeScript libraries"),
+    ("tools", "Docs + Noodle", ["docs", "TheGostsniperfr/Noodle"], "Architecture, diagrams as code"),
+    ("tools", "Agent Kit", ["agent-kit"], "The AI tooling behind the codebase"),
 ]
 
-HUB = dict(lines=["One account.", "One modpack.", "One network."], foot="Modded Minecraft · NeoForge 1.21.1")
+HUB = dict(line="A Satisfactory-style modded server.")
 
-# MaaS: the platform every project above runs on. (benefit, planned)
-MAAS = dict(kicker="MaaS", name="Minecraft as a Service", repo="TheGostsniperfr/infra",
+# MaaS: the platform the whole network runs on. (benefit, planned)
+MAAS = dict(kicker="RUNS ON", word="MaaS", name="Minecraft as a Service", repo="TheGostsniperfr/infra",
             pitch="Provision a Minecraft server in a few clicks.",
-            points=[("One address for every server", False), ("The whole network declared in Git", False),
+            points=[("NeoForge 1.21.1 servers, on demand", False), ("The whole network declared in Git", False),
                     ("A preview server for every change", True)])
 
+FOOTER = f"Repos under github.com/{ORG} unless noted"
+
 # --------------------------------------------------------------------------- design tokens
+# Orange and teal come from the banner (profile_banner.py); text shades are darkened for AA.
 THEMES = {
     "light": dict(
-        canvas="#f3f5f6", card="#ffffff", line="#dbe2e6", grid="#efd6c6",
-        ink="#141b20", body="#3b4852", muted="#5f6d77",
-        hub="#fbeee6", hub_ink="#8f3b14", brand=("#c25a24", "#8f3b14"),
-        accent={"play": "#c25a24", "game": "#0e7a72", "tools": "#46596a"},
-        accent_txt={"play": "#a8461a", "game": "#0e7a72", "tools": "#46596a"},
-        chip="#eef2f4", chip_ink="#3b4852",
-        base="#172026", base_line="#2a3741", on_base="#eef2f4", on_base_muted="#a9b6be", ember="#f0874a"),
+        canvas="#f3f5f6", card="#ffffff", line="#d5dde2", panel="#e9edf0", panel_line="#d5dde2",
+        ink="#141b20", body="#3b4852", muted="#5f6d77", verb="#5f6d77",
+        hub="#f7f8fa", hub_line="#d5dde2", grid="#46606f", grid_o=".10", hub_ink="#374151",
+        brand=("#c25a24", "#8f3b14"),
+        accent={"play": "#c25a24", "game": "#0f8f86", "tools": "#46596a"},
+        accent_txt={"play": "#a8461a", "game": "#0b746c", "tools": "#46596a"},
+        cube=("#e8874e", "#b4572a", "#86391a"), block=("#e6ecf0", "#c9d3d9", "#adbac3"),
+        base="#172026", lip="#0f1419", lip_edge="none", base_line="#2a3741",
+        on_base="#eef2f4", on_base_muted="#a9b6be", ember="#f0874a", spine="#c25a24"),
     "dark": dict(
-        canvas="#0e1418", card="#151d23", line="#26323b", grid="#3a2a20",
-        ink="#e8edf0", body="#b3c0c8", muted="#8d9ca6",
-        hub="#1d1915", hub_ink="#f0a070", brand=("#f39a5f", "#e0703c"),
-        accent={"play": "#e0703c", "game": "#3fb7ab", "tools": "#8ea3b4"},
-        accent_txt={"play": "#f0915a", "game": "#4fc4b8", "tools": "#9fb2c2"},
-        chip="#1e2830", chip_ink="#b3c0c8",
-        base="#e8edf0", base_line="#cdd6dc", on_base="#141b20", on_base_muted="#4f5d67", ember="#b04d1c"),
+        canvas="#0e1418", card="#151d23", line="#2a323c", panel="#121a20", panel_line="#2a323c",
+        ink="#e8edf0", body="#b3c0c8", muted="#8d9ca6", verb="#8d9ca6",
+        hub="#11161c", hub_line="#2a323c", grid="#8fb4c8", grid_o=".09", hub_ink="#d4dce1",
+        brand=("#f39a5f", "#e0703c"),
+        accent={"play": "#e0703c", "game": "#4fd1c5", "tools": "#8ea3b4"},
+        accent_txt={"play": "#f0915a", "game": "#4fd1c5", "tools": "#9fb2c2"},
+        cube=("#f09a62", "#c4622f", "#8f421c"), block=("#3d4d58", "#2b3943", "#1f2a31"),
+        base="#0a0d12", lip="#151c23", lip_edge="#f0894a", base_line="#1f2830",
+        on_base="#e5e7eb", on_base_muted="#a9b6be", ember="#f0894a", spine="#e0703c"),
 }
 
-# grid: 1080 wide, 40 margin, 20 gutter
-W, M, G = 1080, 40, 20
-COL = (W - 2 * M - 2 * G) / 3
-PAD = 24
+# Grid (viewBox units; 1 unit = 0.74 px at README width, 0.32 px on a 360 px phone).
+W, M = 1120, 30
+GUT = 32                     # between the hub and the side columns
+SIDE = 300                   # side column width
+HUBW = W - 2 * M - 2 * SIDE - 2 * GUT
+PAD = 20                     # card padding
+# Type scale, sized so a 360 px phone still gets 7 to 10 px text.
+TITLE, SLUG, BODY, LH, LABEL = 30, 18, 22, 30, 16
 
 # --------------------------------------------------------------------------- typography
 FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "profile", "fonts")
 FACES = {"display": "Archivo-SemiExpandedBold.ttf", "semi": "Archivo-SemiExpandedSemiBold.ttf",
          "medium": "Archivo-Medium.ttf", "text": "Archivo-Regular.ttf",
-         "mono": "JetBrainsMono-Regular.ttf", "monomed": "JetBrainsMono-Medium.ttf", "brand": "ChakraPetch-Bold.ttf"}
+         "mono": "JetBrainsMono-Regular.ttf", "monomed": "JetBrainsMono-Medium.ttf", "brand": "ChakraPetch-Bold.ttf", "brandmed": "ChakraPetch-Medium.ttf"}
 _fonts = {}
 
 
@@ -144,124 +155,227 @@ def wrap(txt, face, size, maxw):
 
 
 # --------------------------------------------------------------------------- components
-NAME, REPO, BODY, LH = 22, 14.5, 17, 23  # type scale
+def _words(txt):
+    """Split '**bold** rest' into (word, face) pairs."""
+    out, bold = [], False
+    for w in txt.split():
+        start = w.startswith("**"); w = w[2:] if start else w
+        bold = bold or start
+        end = w.endswith("**"); w = w[:-2] if end else w
+        out.append((w, "display" if bold else "text"))
+        if end: bold = False
+    return out
+
+
+def rich_lines(txt, size, maxw):
+    """Wrap into as few lines as fit, then balance them so no line is a lone word."""
+    sp = width("a a", "text", size) - width("aa", "text", size)
+    words = [(w, f, width(w, f, size)) for w, f in _words(txt)]
+    lw = lambda ws: sum(x[2] for x in ws) + sp * (len(ws) - 1)
+    if lw(words) <= maxw:
+        return [words], sp
+    best = None
+    for i in range(1, len(words)):  # best two-line split: both fit, widest line smallest
+        a, b = words[:i], words[i:]
+        if lw(a) <= maxw and lw(b) <= maxw and (best is None or max(lw(a), lw(b)) < best[0]):
+            best = (max(lw(a), lw(b)), [a, b])
+    if best:
+        return best[1], sp
+    lines, cur = [], []
+    for wd in words:
+        if cur and lw(cur + [wd]) > maxw:
+            lines.append(cur); cur = []
+        cur.append(wd)
+    return lines + [cur], sp
+
+
+def rich(txt, size, x, y, maxw, fill, strong):
+    lines, sp = rich_lines(txt, size, maxw); o = []
+    for i, ln in enumerate(lines):
+        cx = x
+        for w, f, ww in ln:
+            o.append(text(w, f, size, cx, y + i * LH, strong if f == "display" else fill)); cx += ww + sp
+    return "".join(o), len(lines)
+
+
+def fit(txt, face, size, maxw):
+    return min(size, size * maxw / width(txt, face, size))
+
+
+def diamond(x, y, fill, r=5.7):
+    return f'<rect x="{x - r / 2:.1f}" y="{y - r / 2:.1f}" width="{r:.1f}" height="{r:.1f}" transform="rotate(45 {x:.1f} {y:.1f})" fill="{fill}"/>'
 
 
 def group_label(c, key, x, y):
-    g = GROUPS[key]; lab = g["label"].upper()
-    lw = width(lab, "monomed", 14, 2.4)
-    return (f'<rect x="{x}" y="{y - 10}" width="10" height="10" rx="1" fill="{c["accent"][key]}"/>'
-            + text(lab, "monomed", 14, x + 20, y, c["ink"], tracking=2.4)
-            + text(g["tag"], "text", 16, x + 20 + lw + 12, y, c["muted"]))
+    g = GROUPS[key]; lab = g["label"].upper(); tr = LABEL * .12
+    lw = width(lab, "brand", LABEL, tr)
+    return (f'<rect x="{x}" y="{y - 11}" width="11" height="11" rx="1" fill="{c["accent"][key]}"/>'
+            + text(lab, "brand", LABEL, x + 21, y, c["ink"], tracking=tr)
+            + text(g["tag"], "text", LABEL, x + 21 + lw + 12, y, c["muted"]))
 
 
 def card_height(p, w):
-    lines = len(wrap(p[3], "text", BODY, w - 2 * PAD))
-    return 92 + lines * LH + (40 if len(p) > 4 else 0) + 12
+    return 142 + LH * (len(rich_lines(p[3], BODY, w - 2 * PAD)[0]) - 1)
 
 
-def card(c, p, x, y, w, h):
-    key, name, repo, blurb = p[:4]
-    o = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="12" fill="{c["card"]}" stroke="{c["line"]}"/>',
-         f'<rect x="{x + PAD}" y="{y}" width="24" height="3" fill="{c["accent"][key]}"/>',
-         text(name, "display", min(NAME, NAME * (w - 2 * PAD) / width(name, "display", NAME)), x + PAD, y + 44, c["ink"]),
-         text(repo, "mono", REPO, x + PAD, y + 70, c["accent_txt"][key])]
-    ty = y + 104
-    for ln in wrap(blurb, "text", BODY, w - 2 * PAD):
-        o.append(text(ln, "text", BODY, x + PAD, ty, c["body"])); ty += LH
-    if len(p) > 4:
-        cx = x + PAD; cy = ty - 6
-        for chip in p[4]:
-            cw = width(chip, "monomed", 13.5) + 20
-            o.append(f'<rect x="{cx:.1f}" y="{cy}" width="{cw:.1f}" height="26" rx="6" fill="{c["chip"]}"/>')
-            o.append(text(chip, "monomed", 13.5, cx + 10, cy + 18, c["chip_ink"]))
-            cx += cw + 8
+def card(c, p, x, y, w, h, strong=False):
+    key, title, slugs, line = p
+    o = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="10" fill="{c["card"]}" stroke="{c["line"]}"/>']
+    if strong:  # the game itself gets an inner left edge in its colour
+        o.append(f'<rect x="{x + 1}" y="{y + 14}" width="3" height="{h - 28}" rx="1.5" fill="{c["accent"][key]}"/>')
+    o.append(text(title, "display", fit(title, "display", TITLE, w - 2 * PAD), x + PAD, y + 50, c["ink"]))
+    o.append(text(" · ".join(slugs), "mono", fit(" · ".join(slugs), "mono", SLUG, w - 2 * PAD), x + PAD, y + 80, c["accent_txt"][key]))
+    o.append(rich(line, BODY, x + PAD, y + 116, w - 2 * PAD, c["body"], c["ink"])[0])
     return "".join(o)
 
 
-def iso_grid(c, x, y, w, h, step=32):
-    """Faint isometric grid (the banner's motif), clipped to the hub."""
-    d = []; k = 0.57735  # tan(30)
-    for i in range(-int(h / k / step) - 2, int(w / step) + 2):
-        x0 = x + i * step
-        d.append(f"M{x0:.1f} {y}l{h / k:.1f} {h:.1f}")
-    for i in range(0, int((w + h / k) / step) + 2):
-        x0 = x + i * step
-        d.append(f"M{x0:.1f} {y}l{-h / k:.1f} {h:.1f}")
-    return (f'<defs><clipPath id="hubclip"><rect x="{x}" y="{y}" width="{w}" height="{h}" rx="16"/></clipPath>'
-            f'<radialGradient id="fade" cx=".5" cy=".42" r=".75"><stop offset=".25" stop-color="#fff" stop-opacity="0"/>'
-            f'<stop offset="1" stop-color="#fff"/></radialGradient>'
-            f'<mask id="hubmask"><rect x="{x}" y="{y}" width="{w}" height="{h}" fill="url(#fade)"/></mask></defs>'
-            f'<g clip-path="url(#hubclip)"><path d="{"".join(d)}" stroke="{c["grid"]}" stroke-width="1" mask="url(#hubmask)"/></g>')
+def compact_panel(c, items, x, y, w, h):
+    """Toolkit: no cards, title + slugs only, on a recessed panel."""
+    o = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="10" fill="{c["panel"]}"/>']
+    rh = h / len(items)
+    for i, (key, title, slugs, _) in enumerate(items):
+        ry = y + i * rh
+        if i: o.append(f'<path d="M{x + PAD} {ry:.1f}h{w - 2 * PAD}" stroke="{c["panel_line"]}"/>')
+        block = 28 + 28 * len(slugs)
+        by = ry + (rh - block) / 2 + 22
+        o.append(text(title, "semi", fit(title, "semi", 26, w - 2 * PAD), x + PAD, by, c["body"]))
+        for j, sl in enumerate(slugs):
+            o.append(text(sl, "mono", fit(sl, "mono", SLUG, w - 2 * PAD), x + PAD, by + 30 + j * 26, c["accent_txt"][key]))
+    return "".join(o)
+
+
+def iso_pt(x, y, z, ox, oy, k):
+    return (ox + (x - y) * k * .8660254, oy + (x + y) * k * .5 - z * k)
+
+
+def iso_box(x, y, z, top, left, right, ox, oy, k):
+    p = lambda a, b, cc: iso_pt(x + a, y + b, z + cc, ox, oy, k)
+    poly = lambda pts, f: f'<polygon points="{" ".join(f"{a:.1f},{b:.1f}" for a, b in pts)}" fill="{f}"/>'
+    return (poly([p(0, 1, 0), p(1, 1, 0), p(1, 1, 1), p(0, 1, 1)], left)
+            + poly([p(1, 0, 0), p(1, 1, 0), p(1, 1, 1), p(1, 0, 1)], right)
+            + poly([p(0, 0, 1), p(1, 0, 1), p(1, 1, 1), p(0, 1, 1)], top))
 
 
 def hub(c, x, y, w, h):
-    cx = x + w / 2
-    o = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="16" fill="{c["hub"]}"/>', iso_grid(c, x, y, w, h),
-         f'<defs><linearGradient id="brand" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="{c["brand"][0]}"/>'
-         f'<stop offset="1" stop-color="{c["brand"][1]}"/></linearGradient></defs>']
-    n = len(HUB["lines"]); block = 30 + 20 + 38 + (n - 1) * 30  # cap height .. last baseline
-    ty = y + (h - 40 - block) / 2 + 30
-    o.append(text("ARFFORNIA", "brand", 42, cx, ty, "url(#brand)", anchor="middle", tracking=2))
-    ty += 20
-    o.append(f'<rect x="{cx - 16}" y="{ty}" width="32" height="2" fill="{c["brand"][0]}"/>')
-    for i, ln in enumerate(HUB["lines"]):
-        o.append(text(ln, "semi", 19, cx, ty + 38 + i * 30, c["hub_ink"], anchor="middle"))
-    o.append(text(HUB["foot"], "mono", 13, cx, y + h - 24, c["muted"], anchor="middle"))
+    cx = x + w / 2; o = []
+    # the banner's isometric floor grid, fading out behind the wordmark
+    d = []; step = 34; t = 0.57735
+    for i in range(-int(h / t / step) - 2, int(w / step) + 2):
+        d.append(f"M{x + i * step:.1f} {y}l{h / t:.1f} {h:.1f}")
+    for i in range(0, int((w + h / t) / step) + 2):
+        d.append(f"M{x + i * step:.1f} {y}l{-h / t:.1f} {h:.1f}")
+    o.append(f'<defs><clipPath id="hubclip"><rect x="{x}" y="{y}" width="{w}" height="{h}" rx="16"/></clipPath>'
+             f'<radialGradient id="fade" cx=".5" cy=".5" r=".7"><stop offset=".3" stop-color="#fff" stop-opacity=".25"/>'
+             f'<stop offset="1" stop-color="#fff"/></radialGradient>'
+             f'<mask id="hubmask"><rect x="{x}" y="{y}" width="{w}" height="{h}" fill="url(#fade)"/></mask>'
+             f'<linearGradient id="brand" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="{c["brand"][0]}"/>'
+             f'<stop offset="1" stop-color="{c["brand"][1]}"/></linearGradient></defs>')
+    o.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="16" fill="{c["hub"]}" stroke="{c["hub_line"]}"/>')
+    o.append(f'<g clip-path="url(#hubclip)"><path d="{"".join(d)}" stroke="{c["grid"]}" stroke-opacity="{c["grid_o"]}" '
+             f'stroke-width="1" fill="none" mask="url(#hubmask)"/></g>')
+    # content block: cubes (90) + 30 + wordmark cap (46) + 22 + rule + 40 + line
+    block = 90 + 30 + 46 + 22 + 40
+    top = y + (h - block) / 2 + 28  # optical centre: the cubes rise above their origin
+    k = 26; ox, oy = cx, top + 18
+    cubes = [(0, 0, 0, c["cube"]), (1, 0, 0, c["block"]), (0, 1, 0, c["block"]), (0, 0, 1, c["cube"])]
+    for bx, byy, bz, col in sorted(cubes, key=lambda b: (b[2], b[0] + b[1])):
+        o.append(iso_box(bx - 1, byy - 1, bz, *col, ox, oy, k))
+    wy = top + 90 + 30 + 46
+    o.append(text("ARFFORNIA", "brand", fit("ARFFORNIA", "brand", 64, w - 40), cx, wy, "url(#brand)", anchor="middle", tracking=1.5))
+    o.append(f'<rect x="{cx - 16}" y="{wy + 20}" width="32" height="2" fill="{c["brand"][0]}"/>')
+    o.append(text(HUB["line"], "medium", fit(HUB["line"], "medium", BODY, w - 40), cx, wy + 22 + 40, c["hub_ink"], anchor="middle"))
     return "".join(o)
 
 
 def maas(c, x, y, w):
-    h = 200; o = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="16" fill="{c["base"]}"/>']
+    h, e = 236, 10  # height, isometric edge depth
+    o = [f'<rect x="{x}" y="{y + e}" width="{w - e}" height="{h - e}" fill="{c["base"]}"/>',
+         f'<polygon points="{x},{y + e} {x + e},{y} {x + w},{y} {x + w - e},{y + e}" fill="{c["lip"]}"/>',
+         f'<polygon points="{x + w - e},{y + e} {x + w},{y} {x + w},{y + h - e} {x + w - e},{y + h}" fill="{c["lip"]}"/>']
+    if c["lip_edge"] != "none":
+        o.append(f'<path d="M{x} {y + e}h{w - e}" stroke="{c["lip_edge"]}" stroke-opacity=".7"/>')
     lx = x + 36
-    o.append(text(MAAS["kicker"], "display", 56, lx, y + 76, c["ember"]))
-    o.append(text(MAAS["name"], "display", 24, lx, y + 112, c["on_base"]))
-    o.append(text(MAAS["pitch"], "text", 18, lx, y + 140, c["on_base_muted"]))
-    o.append(text(MAAS["repo"], "mono", REPO, lx, y + h - 28, c["ember"]))
-    px = x + w / 2 + 40; pw = x + w - 36 - px
-    n = len(MAAS["points"]); rh = (h - 48) / n
+    o.append(text(MAAS["kicker"], "monomed", LABEL, lx, y + 50, c["on_base_muted"], tracking=LABEL * .18))
+    o.append(text(MAAS["word"], "display", 56, lx, y + 108, c["ember"]))
+    ww = width(MAAS["word"], "display", 56)
+    o.append(text(MAAS["name"], "display", 26, lx + ww + 18, y + 108, c["on_base"]))
+    o.append(text(MAAS["pitch"], "text", BODY, lx, y + 150, c["on_base_muted"]))
+    o.append(text(MAAS["repo"], "mono", SLUG, lx, y + h - 34, c["ember"]))
+    px = x + w * .56; pw = x + w - e - 36 - px
+    n = len(MAAS["points"]); top = y + e + 22; rh = (h - e - 44) / n
     for i, (pt, planned) in enumerate(MAAS["points"]):
-        ry = y + 24 + i * rh
-        if i: o.append(f'<path d="M{px} {ry:.1f}h{pw:.1f}" stroke="{c["base_line"]}"/>')
+        ry = top + i * rh
+        if i: o.append(f'<path d="M{px:.1f} {ry:.1f}h{pw:.1f}" stroke="{c["base_line"]}"/>')
         by = ry + rh / 2
-        o.append(f'<rect x="{px + 1}" y="{by - 6:.1f}" width="10" height="10" rx="1" '
+        o.append(f'<rect x="{px + 1:.1f}" y="{by - 6:.1f}" width="11" height="11" rx="1" '
                  + (f'fill="none" stroke="{c["ember"]}" stroke-width="2"/>' if planned else f'fill="{c["ember"]}"/>'))
-        o.append(text(pt, "medium", 18, px + 26, by + 5, c["on_base"]))
+        o.append(text(pt, "medium", fit(pt, "medium", BODY, pw - 28 - (90 if planned else 0)), px + 28, by + 7, c["on_base"]))
         if planned:
-            o.append(text("PLANNED", "mono", 12, px + pw, by + 4, c["on_base_muted"], anchor="end", tracking=1.6))
+            o.append(text("PLANNED", "mono", 14, px + pw, by + 5, c["on_base_muted"], anchor="end", tracking=1.6))
     return "".join(o), h
+
+
+def connector(c, x1, y1, x2, y2, color, width_=2, start=True):
+    o = [f'<path d="M{x1:.1f} {y1:.1f}L{x2:.1f} {y2:.1f}" stroke="{color}" stroke-width="{width_}"/>']
+    if start: o.append(diamond(x1, y1, color))
+    o.append(diamond(x2, y2, color))
+    return "".join(o)
 
 
 def build(theme):
     c = THEMES[theme]; o = []; _defs.clear()
-    by_slot = {s: [p for p in PROJECTS if GROUPS[p[0]]["slot"] == s] for s in ("top", "left", "right")}
+    slot = {s: [p for p in PROJECTS if GROUPS[p[0]]["slot"] == s] for s in ("top", "left", "right")}
     key_of = {s: next(k for k, g in GROUPS.items() if g["slot"] == s) for s in ("top", "left", "right")}
-    y = M + 22
-    # top row: cards share the full width
-    top = by_slot["top"]; tw = (W - 2 * M - (len(top) - 1) * G) / len(top)
-    o.append(group_label(c, key_of["top"], M, y)); y += 20
-    th = max(card_height(p, tw) for p in top)
-    for i, p in enumerate(top):
-        o.append(card(c, p, M + i * (tw + G), y, tw, th))
-    y += th + 44
-    # middle: left column, hub, right column
-    o.append(group_label(c, key_of["left"], M, y)); o.append(group_label(c, key_of["right"], M + 2 * (COL + G), y))
-    y += 20
-    ch = max(card_height(p, COL) for p in by_slot["left"] + by_slot["right"])
-    stack = max(len(by_slot["left"]), len(by_slot["right"])) * (ch + 16) - 16
-    for col, slot in ((0, "left"), (2, "right")):
-        for j, p in enumerate(by_slot[slot]):
-            o.append(card(c, p, M + col * (COL + G), y + j * (ch + 16), COL, ch))
-    o.append(hub(c, M + COL + G, y - 32, COL, stack + 32))  # hub reaches up to the label line
-    y += stack + 20
-    band, bh = maas(c, M, y, W - 2 * M)
-    o.append(band); y += bh + 20
-    o.append(text(f"Repositories on github.com/{ORG} unless an owner is shown", "text", 14, M, y + 8, c["muted"]))
-    H = int(y + 8 + M - 8)
+    cols = [(M, SIDE), (M + SIDE + GUT, HUBW), (M + SIDE + GUT + HUBW + GUT, SIDE)]
+    hub_x, hub_cx = cols[1][0], cols[1][0] + HUBW / 2
+
+    y = M + 26
+    o.append(group_label(c, key_of["top"], M, y)); y += 18
+    top = slot["top"]
+    if len(top) == 3:  # three player tools sit on the three columns
+        boxes = cols
+    else:
+        tw = (W - 2 * M - (len(top) - 1) * GUT) / len(top); boxes = [(M + i * (tw + GUT), tw) for i in range(len(top))]
+    th = max(card_height(p, bw) for p, (bx, bw) in zip(top, boxes))
+    for p, (bx, bw) in zip(top, boxes):
+        o.append(card(c, p, bx, y, bw, th))
+    play_bottom = y + th
+    y = play_bottom + 64
+    o.append(group_label(c, key_of["left"], M, y)); o.append(group_label(c, key_of["right"], cols[2][0], y))
+    y += 18
+    ch = max(card_height(p, SIDE) for p in slot["left"])
+    stack = len(slot["left"]) * (ch + 16) - 16
+    for j, p in enumerate(slot["left"]):
+        o.append(card(c, p, M, y + j * (ch + 16), SIDE, ch, strong=True))
+    o.append(compact_panel(c, slot["right"], cols[2][0], y, SIDE, stack))
+    spine = 72  # room under the hub for the "runs on" connector
+    hub_h = stack + 8 - spine
+    o.append(hub(c, hub_x, y, HUBW, hub_h))
+
+    # connectors: each group plugs into the hub, the hub plugs into MaaS
+    mid = y + (len(slot["left"]) // 2) * (ch + 16) + ch / 2
+    mid = min(mid, y + hub_h - 40)
+    o.append(connector(c, hub_cx, play_bottom, hub_cx, y, c["accent"][key_of["top"]]))
+    o.append(text("plays on", "mono", LABEL, hub_cx + 14, (play_bottom + y) / 2 + 5, c["verb"]))
+    o.append(connector(c, M + SIDE, mid, hub_x, mid, c["accent"][key_of["left"]], start=False))
+    o.append(connector(c, cols[2][0], mid, hub_x + HUBW, mid, c["accent"][key_of["right"]], start=False))
+    base_y = y + stack + 8
+    o.append(f'<path d="M{hub_cx} {y + hub_h}V{base_y}" stroke="{c["spine"]}" stroke-width="3"/>')
+    o.append(f'<path class="belt" d="M{hub_cx} {y + hub_h}V{base_y}" stroke="{c["canvas"]}" stroke-width="1" stroke-dasharray="3 9"/>')
+    o.append(diamond(hub_cx, y + hub_h, c["spine"], 8) + diamond(hub_cx, base_y - 1, c["spine"], 8))
+    o.append(text("runs on", "mono", LABEL, hub_cx + 14, y + hub_h + spine / 2 + 6, c["verb"]))
+
+    band, bh = maas(c, M, base_y, W - 2 * M)
+    o.append(band)
+    yb = base_y + bh + 34
+    o.append(text(FOOTER, "text", LABEL, M, yb, c["muted"]))
+    H = int(yb + M - 6)
     head = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" '
-            f'aria-label="The Arffornia ecosystem: Play (launcher, website, sign-in theme), Game (mod, provisioning, proxy) '
-            f'and Toolkit (Nexus libraries, docs and Noodle, agent kit), all running on MaaS, Minecraft as a Service.">'
-            f'<rect width="{W}" height="{H}" rx="20" fill="{c["canvas"]}"/>')
+            f'aria-label="The Arffornia ecosystem. Play: launcher, website, sign-in pages. Game: mod, provisioning, votes. '
+            f'Toolkit: Nexus libraries, docs and Noodle, agent kit. All of it runs on MaaS, Minecraft as a Service.">'
+            f'<style>@keyframes belt {{ to {{ stroke-dashoffset: -24 }} }} .belt {{ animation: belt 1.6s linear infinite }} '
+            f'@media (prefers-reduced-motion: reduce) {{ .belt {{ animation: none }} }}</style>'
+            f'<rect width="{W}" height="{H}" rx="24" fill="{c["canvas"]}"/>')
     return head + glyph_defs() + "".join(o) + "</svg>"
 
 
