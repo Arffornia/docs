@@ -1,0 +1,14 @@
+apiVersion: noodle/v1alpha1
+kind: Fragment
+provenance: {adapter: k8s, source: proxy.yaml, ref: infra@b1e7bdc, observedAt: "2026-10-29T02:33:03Z"}
+elements:
+  - {id: 'k8s:arffornia-proxy-velocity/deployment/arffornia-proxy-velocity-minecraft-proxy', kind: backend, parent: 'k8s:arffornia-proxy-velocity/namespace/arffornia-proxy-velocity', tech: 'Deployment · bungeecord:latest', ports: [{name: nuvotifier, protocol: TCP, port: 8192}, {name: proxy, protocol: TCP, port: 25577}], src: {file: proxy.yaml, line: 71}}
+  - {id: 'k8s:arffornia-proxy-velocity/namespace/arffornia-proxy-velocity', kind: group, src: {file: proxy.yaml, line: 1}}
+  - {id: 'k8s:arffornia-proxy-velocity/service/arffornia-proxy-velocity-minecraft-proxy', kind: backend, parent: 'k8s:arffornia-proxy-velocity/namespace/arffornia-proxy-velocity', tech: Service · LoadBalancer, ports: [{name: proxy, protocol: TCP, port: 25565}], src: {file: proxy.yaml, line: 31}}
+  - {id: 'k8s:arffornia-proxy-velocity/service/arffornia-proxy-velocity-minecraft-proxy-nuvotifier', kind: backend, parent: 'k8s:arffornia-proxy-velocity/namespace/arffornia-proxy-velocity', tech: Service · LoadBalancer, ports: [{name: nuvotifier, protocol: TCP, port: 8192}], src: {file: proxy.yaml, line: 51}}
+connections:
+  - {id: 'k8s:c/2ee7ddf408', from: 'k8s:arffornia-proxy-velocity/service/arffornia-proxy-velocity-minecraft-proxy', to: 'k8s:arffornia-proxy-velocity/deployment/arffornia-proxy-velocity-minecraft-proxy', port: proxy, kind: flow, src: {file: proxy.yaml, line: 31}}
+  - {id: 'k8s:c/59a84989eb', from: 'k8s:arffornia-proxy-velocity/service/arffornia-proxy-velocity-minecraft-proxy-nuvotifier', to: 'k8s:arffornia-proxy-velocity/deployment/arffornia-proxy-velocity-minecraft-proxy', port: nuvotifier, kind: flow, src: {file: proxy.yaml, line: 51}}
+unresolved:
+  - {kind: unknown-kind, value: guard.3istor.com/OffhoursSchedule, src: {file: proxy.yaml, line: 243}}
+  - {kind: unknown-kind, value: ricoberger.de/VaultSecret, count: 3, src: {file: proxy.yaml, line: 255}}

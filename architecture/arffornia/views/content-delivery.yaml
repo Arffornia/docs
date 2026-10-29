@@ -1,0 +1,89 @@
+apiVersion: noodle/v1alpha1
+kind: View
+type: topology
+title: "Arffornia · Content delivery · Mods and config"
+subtitle: "How mods and config files reach the game server and the players' PCs."
+meta:
+  - "Scope: Arffornia_Provisioning@235d0b8, Nexus_Mods@ddcd22b (config-updater and launcher), Arffornia_Launcher_V.5.2@215a845, release workflows of Mods and Proxy, infra@b1e7bdc server overlay · derived from code, 2026-10-29"
+  - "Out of scope: the proxy pod gets the same init container with KIND=proxy (Velocity plugins, velocity.toml) into an emptyDir: same flow, not drawn · the website image build · Velocity and NeoForge server binaries (itzg downloads them)"
+  - "v0.1 · source: architecture/arffornia/views/content-delivery.yaml"
+
+include:
+  - z-team/**
+  - z-github
+  - provisioning-repo
+  - index-bot
+  - release-ci
+  - gh-releases
+  - updater-build
+  - ghcr
+  - launcher-releases
+  - z-downloads/**
+  - z-cluster
+  - g-apps
+  - g-server
+  - config-updater
+  - data-pvc
+  - arcane
+  - z-player-pc
+  - launcher
+  - game-dir
+
+steps: [c-maintainer-provisioning, c-indexbot-provisioning, c-updater-provisioning, c-updater-curse, c-updater-pvc, c-arcane-pvc]
+background: [c-releaseci-ghreleases, c-updaterbuild-ghcr, c-launcher-selfupdate]
+
+labels:
+  c-maintainer-provisioning: ""
+  c-indexbot-provisioning: ""
+  c-updater-provisioning: "modList + index + files · HTTPS"
+  c-updater-curse: "CF lookup + jar"
+  c-updater-modrinth: "MR lookup + jar"
+  c-updater-ghreleases: "release latest"
+  c-updater-pvc: ""
+  c-arcane-pvc: ""
+  c-launcher-provisioning: "modList + index + files"
+  c-launcher-curse: "CF lookup + jar"
+  c-launcher-modrinth: "MR lookup + jar"
+  c-launcher-ghreleases: "release latest"
+  c-launcher-azul: "Java 21, first run"
+  c-launcher-neoforge: "installer jar"
+  c-launcher-mojang: "MCLC libs + assets"
+  c-launcher-gamedir: "write, delete unlisted"
+  c-releaseci-ghreleases: ""
+  c-updaterbuild-ghcr: ""
+  c-launcher-selfupdate: "update check"
+  r-updater-image: ""
+
+notes:
+  - {id: n-pod-start, text: "Runs on **every pod start**: offhours-guard sleeps the server at 03:00 and wakes it at 07:00 (Europe/Paris), so it resyncs each morning."}
+  - {id: n-launcher, text: "The launcher runs the **same Nexus_Mods** sync on every Play, against config/launcher/, with secrets left empty."}
+
+cards:
+  - {id: card-legend, title: "Legend", color: slate, legend: true}
+  - id: card-data-plane
+    title: "Request path · to the server"
+    color: cyan
+    lines:
+      - "[1] A maintainer pushes to main of Arffornia_Provisioning: modList.json (CurseForge, Modrinth, GitHub entries) and storage/ files."
+      - "[2] The index bot regenerates index.json (path, sha1) for server, proxy and launcher, and commits it."
+      - "[3] At pod start, the config-updater init container reads modList.json, index.json and storage/ from raw.githubusercontent.com (BASE_URL)."
+      - "[4] Nexus_Mods resolves each entry on api.curse.tools (and Modrinth, GitHub releases), then downloads missing or changed jars."
+      - "[5] It writes /data: mods/, config/, kubejs/… and deletes every jar not in the list."
+      - "[6] The itzg server boots NeoForge 21.1.172 from /data, replacing ${CFG_*} placeholders with Secret values."
+  - id: card-control-plane
+    title: "Background and player side"
+    color: violet
+    lines:
+      - "[A] Mods and Proxy publish arffornia.jar and arffornia_proxy.jar on tags v*; modLists pin them to tag latest."
+      - "[B] build_app.yml pushes config-updater only on tags updater-* (only updater-0.0.7 exists); the dotted link is the init container pulling :latest."
+      - "[C] electron-updater checks GitHub releases of the launcher."
+      - "On Play the launcher installs Java 21 from Azul and the NeoForge installer, syncs the launcher mod list into the game directory, then MCLC fetches Mojang files."
+  - id: card-gaps
+    title: "Gaps and risks found in code"
+    color: orange
+    lines:
+      - "!!G7!! **Old repo URL.** BASE_URL and JSON_MOD_LIST_URL use Arffornia_Network, alive only through GitHub's redirect."
+      - "!!G8!! **Failed lookups delete mods.** Errors are logged, unresolved jars are deleted, exit code 0."
+      - "!!G9!! **No versioning.** main is production for everyone; jars on tag latest; images on :latest."
+      - "!!G10!! **Third-party proxy.** CurseForge metadata from api.curse.tools, not the official API."
+      - "!!G11!! **Unverified downloads.** Java and NeoForge installer have no checksum."

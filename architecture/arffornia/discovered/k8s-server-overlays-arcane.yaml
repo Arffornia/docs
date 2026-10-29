@@ -1,0 +1,18 @@
+apiVersion: noodle/v1alpha1
+kind: Fragment
+provenance: {adapter: k8s, source: server-overlays-arcane.yaml, ref: infra@b1e7bdc, observedAt: "2026-10-29T02:33:03Z"}
+elements:
+  - {id: 'k8s:arffornia-server-arcane/deployment/arffornia-server-arcane-minecraft', kind: backend, parent: 'k8s:arffornia-server-arcane/namespace/arffornia-server-arcane', tech: 'Deployment · minecraft-server:2025.12.1-java21', ports: [{name: bluemap-live, protocol: TCP, port: 8100}, {name: http-metrics, protocol: TCP, port: 19565}, {name: minecraft, protocol: TCP, port: 25565}, {name: rcon, protocol: TCP, port: 25575}], src: {file: server-overlays-arcane.yaml, line: 194}}
+  - {id: 'k8s:arffornia-server-arcane/namespace/arffornia-server-arcane', kind: group, src: {file: server-overlays-arcane.yaml, line: 1}}
+  - {id: 'k8s:arffornia-server-arcane/service/arffornia-server-arcane-minecraft', kind: backend, parent: 'k8s:arffornia-server-arcane/namespace/arffornia-server-arcane', tech: Service, ports: [{name: minecraft, protocol: TCP, port: 25565}], src: {file: server-overlays-arcane.yaml, line: 51}}
+  - {id: 'k8s:arffornia-server-arcane/service/arffornia-server-arcane-minecraft-bluemap-live', kind: backend, parent: 'k8s:arffornia-server-arcane/namespace/arffornia-server-arcane', tech: Service, ports: [{name: bluemap-live, protocol: TCP, port: 8100}], src: {file: server-overlays-arcane.yaml, line: 74}}
+  - {id: 'k8s:arffornia-server-arcane/service/arffornia-server-arcane-minecraft-http-metrics', kind: backend, parent: 'k8s:arffornia-server-arcane/namespace/arffornia-server-arcane', tech: Service, ports: [{name: http-metrics, protocol: TCP, port: 19565}], src: {file: server-overlays-arcane.yaml, line: 97}}
+  - {id: 'k8s:arffornia-server-arcane/service/arffornia-server-arcane-minecraft-rcon', kind: backend, parent: 'k8s:arffornia-server-arcane/namespace/arffornia-server-arcane', tech: Service, ports: [{name: rcon, protocol: TCP, port: 25575}], src: {file: server-overlays-arcane.yaml, line: 120}}
+connections:
+  - {id: 'k8s:c/2bd4e01ba1', from: 'k8s:arffornia-server-arcane/service/arffornia-server-arcane-minecraft-rcon', to: 'k8s:arffornia-server-arcane/deployment/arffornia-server-arcane-minecraft', port: rcon, kind: flow, src: {file: server-overlays-arcane.yaml, line: 120}}
+  - {id: 'k8s:c/a78be79869', from: 'k8s:arffornia-server-arcane/service/arffornia-server-arcane-minecraft', to: 'k8s:arffornia-server-arcane/deployment/arffornia-server-arcane-minecraft', port: minecraft, kind: flow, src: {file: server-overlays-arcane.yaml, line: 51}}
+  - {id: 'k8s:c/c44544fd60', from: 'k8s:arffornia-server-arcane/service/arffornia-server-arcane-minecraft-bluemap-live', to: 'k8s:arffornia-server-arcane/deployment/arffornia-server-arcane-minecraft', port: bluemap-live, kind: flow, src: {file: server-overlays-arcane.yaml, line: 74}}
+  - {id: 'k8s:c/e41d473d3e', from: 'k8s:arffornia-server-arcane/service/arffornia-server-arcane-minecraft-http-metrics', to: 'k8s:arffornia-server-arcane/deployment/arffornia-server-arcane-minecraft', port: http-metrics, kind: flow, src: {file: server-overlays-arcane.yaml, line: 97}}
+unresolved:
+  - {kind: unknown-kind, value: guard.3istor.com/OffhoursSchedule, src: {file: server-overlays-arcane.yaml, line: 439}}
+  - {kind: unknown-kind, value: ricoberger.de/VaultSecret, count: 6, src: {file: server-overlays-arcane.yaml, line: 471}}

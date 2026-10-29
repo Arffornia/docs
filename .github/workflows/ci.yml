@@ -1,0 +1,19 @@
+name: ci
+on:
+  pull_request:
+  push: {branches: [main]}
+permissions: {contents: read}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.13"}
+      - uses: actions/setup-go@v6
+        with: {go-version: stable}
+      - name: Install tools
+        run: |
+          pip install -r requirements.txt
+          go install github.com/TheGostsniperfr/Noodle/cmd/noodle@main
+      - run: make check

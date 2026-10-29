@@ -1,0 +1,76 @@
+apiVersion: noodle/v1alpha1
+kind: Layout
+canvas: {width: 3050, height: 1640}
+
+# Clients on top (team, cluster, player PC), servers below (GitHub, third-party
+# downloads): every request leaves a bottom or right border and enters a top.
+# Corridor x 1060-1160 holds the config-updater's four vertical lanes; corridor
+# y 700-890 holds one horizontal lane per edge. Waypoints are canvas points.
+
+elements:
+  z-team: {x: 40, y: 200, w: 200, h: 200}
+  maintainer: {x: 72, y: 70, w: 56, h: 56}
+
+  z-cluster: {x: 320, y: 200, w: 740, h: 470}
+  g-apps: {x: 30, y: 60, w: 680, h: 380}
+  g-server: {x: 30, y: 60, w: 620, h: 290}
+  config-updater: {x: 20, y: 60, w: 260, h: 90}
+  arcane: {x: 20, y: 180, w: 260, h: 90}
+  data-pvc: {x: 380, y: 170, w: 220, h: 100}
+
+  z-player-pc: {x: 1160, y: 200, w: 380, h: 470}
+  launcher: {x: 40, y: 60, w: 300, h: 110}
+  game-dir: {x: 40, y: 300, w: 220, h: 110}
+
+  z-github: {x: 40, y: 900, w: 1480, h: 330}
+  index-bot: {x: 30, y: 70, w: 230, h: 100}
+  provisioning-repo: {x: 340, y: 70, w: 260, h: 100}
+  release-ci: {x: 640, y: 70, w: 210, h: 100}
+  gh-releases: {x: 930, y: 70, w: 270, h: 100}
+  launcher-releases: {x: 1230, y: 70, w: 230, h: 100}
+  updater-build: {x: 30, y: 200, w: 230, h: 90}
+  ghcr: {x: 340, y: 200, w: 260, h: 90}
+
+  z-downloads: {x: 1580, y: 900, w: 1430, h: 200}
+  curse-tools: {x: 30, y: 70, w: 250, h: 100}
+  modrinth: {x: 310, y: 70, w: 250, h: 100}
+  azul: {x: 590, y: 70, w: 250, h: 100}
+  neoforge-maven: {x: 870, y: 70, w: 250, h: 100}
+  mojang-files: {x: 1150, y: 70, w: 250, h: 100}
+
+edges:
+  # request path to the server
+  c-maintainer-provisioning: {from: maintainer.right, to: provisioning-repo.top@15px, waypoints: [[290, 298], [290, 880], [395, 880]], label_at: [290, 760]}
+  c-indexbot-provisioning: {from: index-bot.right, to: provisioning-repo.left}
+  c-updater-provisioning: {from: config-updater.right@60px, to: provisioning-repo.top@70px, waypoints: [[1080, 440], [1080, 720], [450, 720]], label_at: [880, 720]}
+  c-updater-ghreleases: {from: config-updater.right@45px, to: gh-releases.top@40px, waypoints: [[1100, 425], [1100, 740], [1010, 740]], label_at: [1010, 880]}
+  c-updater-curse: {from: config-updater.right@30px, to: curse-tools.top@150px, waypoints: [[1120, 410], [1120, 780], [1760, 780]], label_at: [1300, 780]}
+  c-updater-modrinth: {from: config-updater.right@15px, to: modrinth.top@40px, waypoints: [[1140, 395], [1140, 760], [1930, 760]], label_at: [1600, 760]}
+  c-updater-pvc: {from: config-updater.right@75px, to: data-pvc.top@50px, waypoints: [[810, 455]], label_at: [810, 472]}
+  c-arcane-pvc: {from: arcane.right@45px, to: data-pvc.left@55px}
+
+  # player side
+  c-launcher-gamedir: {from: launcher.bottom@60px, to: game-dir.top@60px, label_at: [1260, 435]}
+  c-launcher-selfupdate: {from: launcher.bottom@260px, to: launcher-releases.top@190px, label_at: [1460, 900]}
+  c-launcher-ghreleases: {from: launcher.bottom@245px, to: gh-releases.top@200px, waypoints: [[1445, 820], [1170, 820]], label_at: [1300, 820]}
+  c-launcher-provisioning: {from: launcher.bottom@280px, to: provisioning-repo.top@200px, waypoints: [[1480, 840], [580, 840]], label_at: [800, 840]}
+  c-launcher-curse: {from: launcher.right@75px, to: curse-tools.top@225px, waypoints: [[1835, 335]], label_at: [1835, 560]}
+  c-launcher-modrinth: {from: launcher.right@60px, to: modrinth.top@180px, waypoints: [[2070, 320]], label_at: [2070, 560]}
+  c-launcher-azul: {from: launcher.right@45px, to: azul.top@125px, waypoints: [[2295, 305]], label_at: [2295, 560]}
+  c-launcher-neoforge: {from: launcher.right@30px, to: neoforge-maven.top@125px, waypoints: [[2575, 290]], label_at: [2575, 560]}
+  c-launcher-mojang: {from: launcher.right@15px, to: mojang-files.top@125px, waypoints: [[2855, 275]], label_at: [2855, 560]}
+
+  # background
+  c-releaseci-ghreleases: {from: release-ci.right, to: gh-releases.left}
+  c-updaterbuild-ghcr: {from: updater-build.right@70px, to: ghcr.left@70px}
+  r-updater-image: {from: config-updater.left@30px, to: ghcr.left@20px, waypoints: [[310, 410], [310, 1120]]}
+
+notes:
+  n-pod-start: {x: 40, y: 440, w: 200, h: 170}
+  n-launcher: {x: 1580, y: 1140, w: 760, h: 60}
+
+cards:
+  card-legend: {x: 40, y: 1290, w: 600, h: 310}
+  card-data-plane: {x: 670, y: 1290, w: 900, h: 310}
+  card-control-plane: {x: 1600, y: 1290, w: 700, h: 310}
+  card-gaps: {x: 2330, y: 1290, w: 680, h: 310}

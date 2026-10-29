@@ -1,0 +1,76 @@
+apiVersion: noodle/v1alpha1
+kind: View
+type: topology
+state: diff
+title: "Arffornia · Preview environments · Proposal (M3)"
+subtitle: "What would a labelled pull request get: an isolated server with its own database and tests, on the current platform?"
+meta:
+  - "Scope: the design in the infra audit §11 (ADR-0007), drawn as added over the current platform (dimmed) · nothing here exists in code yet · target M3"
+  - "Out of scope: the local arffornia-server Helm chart and the Nexus_Mods `url` source and overrides.json it needs (prerequisites, not runtime) · a preview website (open question Q2: stub, shared staging, or per-PR)"
+  - "v0.1 · source: architecture/arffornia/views/previews.yaml"
+
+include:
+  - z-team/**
+  - z-github
+  - pr-repos
+  - bundle-ci
+  - z-cluster
+  - g-gitops/**
+  - g-lb/**
+  - g-data/**
+  - g-preview/**
+  - g-apps
+  - g-server
+  - arcane
+
+steps: [c-maintainer-pr, c-bundleci-store, c-appset-prs, c-argocd-preview, c-previewserver-store, c-previewserver-pg, c-test-server, c-test-pr]
+background: [c-argocd-apps, c-postgres-garage]
+
+labels:
+  c-maintainer-pr: "open PR + label preview"
+  c-bundleci-store: "push bundle · S3"
+  c-appset-prs: "poll labelled PRs"
+  c-argocd-preview: "sync · CreateNamespace"
+  c-previewserver-store: "BASE_URL=<bundle>/<sha>"
+  c-previewserver-pg: "query · SQL"
+  c-test-server: "run tests · RCON"
+  c-test-pr: "comment results"
+  c-maintainer-mcrouter: "join pr-<n> · LAN/VPN"
+  c-mcrouter-preview: "route by host"
+  c-argocd-apps: "apply prod"
+  c-postgres-garage: ""
+  c-arcane-postgres: ""
+  x-preview-prod-db: "prod DB: denied"
+  r-appset-project: ""
+
+cards:
+  - {id: card-legend, title: "Legend", color: slate, legend: true}
+  - id: card-data-plane
+    title: "Request path · a preview from PR to results"
+    color: cyan
+    lines:
+      - "[1] A maintainer (or an agent) opens a same-repo PR in Provisioning, Mods or Proxy and adds the preview label."
+      - "[2] CI builds an immutable bundle (regenerated index.json, built jars) to Garage previews/<repo>-pr<n>/<sha>/."
+      - "[3] The ApplicationSet PR generator polls GitHub (every 180 s or a webhook) and makes one Application per PR."
+      - "[4] Argo CD syncs it in project arffornia-preview to ns arffornia-pr-<repo>-<n>, PSA restricted."
+      - "[5] The config-updater pulls the bundle instead of main: BASE_URL is the only change."
+      - "[6] The server uses its own 1-instance Zalando Postgres; credentials stay in the namespace, no Vault."
+      - "[7] A post-sync Job waits for Done, runs rcon-cli tests (/forge mods, /gametest runall), greps logs."
+      - "[8] It posts a JUnit summary and logs as a PR comment. Closing the PR deletes the namespace."
+  - id: card-guardrails
+    title: "Guardrails"
+    color: rose
+    lines:
+      - "AppProject arffornia-preview: destinations arffornia-pr-* only; VaultSecret, PV, LoadBalancer and cluster-scoped kinds denied."
+      - "ResourceQuota 8 GiB / 3 CPU and a LimitRange per preview; a cap on concurrent previews."
+      - "Default-deny NetworkPolicy: egress to the internet (mod CDNs) and its own DB only; no cluster CIDRs, no 192.168.1.0/24."
+      - "automountServiceAccountToken: false. Never on fork PRs: a PR jar is arbitrary Java."
+      - "Access: mc-router behind one MetalLB IP, pr-<n>.preview.arffornia.com on LAN/VPN; offline-mode off, whitelist on."
+  - id: card-open
+    title: "Open questions"
+    color: orange
+    lines:
+      - "Q1 Capacity: a 300-mod pack needs 8-16 GiB per server; node headroom is unknown."
+      - "Q2 Website API for previews: stub, shared staging or per-PR instance."
+      - "Q3 Release channels: keep main as production, or add a stable tag and treat main as staging."
+      - "Prerequisite: per-namespace Vault roles (G4), or previews could read every Arffornia secret."

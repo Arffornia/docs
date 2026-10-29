@@ -1,0 +1,71 @@
+apiVersion: noodle/v1alpha1
+kind: View
+type: landscape
+title: "Arffornia · Tech stack"
+subtitle: "What is Arffornia built with, from what players touch to the cluster it runs on?"
+meta:
+  - "Scope: the game, its website and launcher, how content reaches them, and the homelab platform they run on · derived from code, 2026-10-29"
+  - "Out of scope: build-only libraries (Gradle plugins, Vite, Pinia) · services of the homelab not used by Arffornia (Nextcloud, Immich, Plex…)"
+  - "v0.1 · source: architecture/arffornia/views/tech-stack.yaml"
+
+bands:
+  - id: players
+    title: Player-facing
+    sub: what players and visitors use
+    color: sky
+    sections:
+      - {title: Launcher, items: [launcher, t-nexus]}
+      - {title: Game, items: [t-neoforge, arcane, t-velocity]}
+      - {title: Web, items: [website, bluemap-web]}
+  - id: delivery
+    title: Delivery
+    sub: from a commit to a running server or a player's PC
+    color: emerald
+    flow: true
+    sections:
+      - {title: Source, items: [provisioning-repo, infra-repo]}
+      - {title: CI, items: [index-bot, release-ci, t-trivy, t-renovate]}
+      - {title: Artifacts, items: [gh-releases, ghcr]}
+      - {title: GitOps, items: [argocd, t-helm-kustomize]}
+  - id: services
+    title: Platform services
+    sub: what the Arffornia namespaces consume
+    color: violet
+    sections:
+      - {title: Traffic, items: [envoy, metallb, t-certmanager]}
+      - {title: Data, items: [postgres, garage]}
+      - {title: Secrets, items: [vault, t-terraform]}
+  - id: runtime
+    title: Runtime
+    sub: the foundation
+    color: cyan
+    sections:
+      - {title: Kubernetes, items: [t-kubernetes, t-cilium]}
+      - {title: Storage, items: [t-longhorn, nas]}
+side:
+  - {title: Observability, color: orange, items: [prometheus, alertmanager, t-grafana]}
+  - {title: Identity, color: rose, items: [ms-login]}
+  - {title: Edge, color: amber, items: [cf-edge]}
+  - {title: Community, color: slate, items: [discord]}
+labels:
+  launcher: Electron launcher
+  arcane: itzg minecraft-server
+  website: Laravel 12
+  bluemap-web: BlueMap
+  provisioning-repo: Provisioning repo
+  infra-repo: infra repo
+  index-bot: GitHub Actions
+  release-ci: Gradle releases
+  gh-releases: GitHub Releases
+  ghcr: GHCR
+  argocd: Argo CD 3.3
+  envoy: Envoy Gateway 1.7
+  postgres: Zalando Postgres 17
+  garage: Garage S3
+  vault: Vault + VSO
+  nas: SMB NAS
+  prometheus: Prometheus
+  alertmanager: Alertmanager
+  ms-login: Microsoft / Xbox
+  cf-edge: Cloudflare
+  discord: Discord

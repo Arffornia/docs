@@ -1,0 +1,6 @@
+apiVersion: noodle/v1alpha1
+kind: Fragment
+provenance: {adapter: k8s, source: gateway-infra.yaml, ref: infra@b1e7bdc, observedAt: "2026-10-29T02:33:05Z"}
+elements:
+  - {id: 'k8s:gateway-infra/gateway/shared-gateway', kind: backend, parent: 'k8s:gateway-infra/namespace/gateway-infra', tech: Gateway · eg, ports: [{name: http-arffornia, protocol: TCP, port: 80}, {name: http-wildcard, protocol: TCP, port: 80}, {name: https-arffornia, protocol: TCP, port: 443}, {name: https-wildcard, protocol: TCP, port: 443}], src: {file: gateway-infra.yaml, line: 37}}
+  - {id: 'k8s:gateway-infra/namespace/gateway-infra', kind: group, src: {file: gateway-infra.yaml, line: 1}}

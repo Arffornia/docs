@@ -1,0 +1,655 @@
+apiVersion: noodle/v1alpha1
+kind: Model
+
+# Arffornia: a modded Minecraft server (NeoForge 1.21.1), its website, launcher and the
+# homelab platform it runs on. Derived from code, 2026-10-29:
+#   infra@b1e7bdc (k8s/config, k8s/apps, terraform), Arffornia_Provisioning@235d0b8,
+#   Arffornia_Mods@a72e114, Arffornia_Proxy@1fcb8d0, Arffornia_Website (routes, services),
+#   Arffornia_Launcher_V.5.2@215a845, Nexus_Mods@ddcd22b, minecraft-oauth.
+# Kubernetes objects come from `kustomize build --enable-helm` of the Arffornia overlays,
+# discovered into discovered/ (scripts/discover.sh) and linked with `matches`.
+
+elements:
+  # ── Regions ────────────────────────────────────────────────────────────────
+  - {id: z-team, kind: region, color: slate, icon: user, title: "TEAM"}
+  - {id: z-player-pc, kind: region, color: sky, icon: user, title: "PLAYER PC", sub: "Windows · macOS · Linux"}
+  - {id: z-internet, kind: region, color: slate, icon: globe, title: "INTERNET"}
+  - {id: z-cloudflare, kind: region, color: orange, icon: cloudflare, title: "CLOUDFLARE", sub: "proxied records only"}
+  - {id: z-home, kind: region, color: amber, icon: rack, title: "HOME NETWORK", sub: "dc_ip"}
+  - {id: z-nas, kind: region, color: violet, icon: rack, title: "NAS", sub: "192.168.1.49 · RAID5"}
+  - {id: z-cluster, kind: region, color: cyan, icon: kubernetes, title: "KUBERNETES · HOMELAB", sub: "Cilium · Argo CD app-of-apps on infra@HEAD"}
+  - {id: z-github, kind: region, color: slate, icon: github, title: "GITHUB", sub: "github.com/Arffornia"}
+  - {id: z-downloads, kind: region, color: amber, icon: globe, title: "DOWNLOADS"}
+  - {id: z-microsoft, kind: region, color: sky, icon: microsoft, title: "MICROSOFT · MOJANG"}
+  - {id: z-saas, kind: region, color: slate, icon: globe, title: "THIRD-PARTY SAAS"}
+
+  # ── Groups in the cluster ──────────────────────────────────────────────────
+  - {id: g-gateway, kind: group, parent: z-cluster, color: emerald, icon: envoy-gateway, title: "GATEWAY API",
+     matches: ['k8s:gateway-infra/namespace/gateway-infra']}
+  - {id: g-lb, kind: group, parent: z-cluster, color: amber, icon: metallb, title: "LOAD BALANCING", sub: "ns metallb-system"}
+  - {id: g-obs, kind: group, parent: z-cluster, color: orange, icon: prometheus, title: "OBSERVABILITY", sub: "ns monitoring"}
+  - {id: g-secrets, kind: group, parent: z-cluster, color: violet, icon: vault, title: "SECRETS", sub: "ns vault · vault-secrets-operator"}
+  - {id: g-gitops, kind: group, parent: z-cluster, color: rose, icon: argo, title: "GITOPS", sub: "ns argocd"}
+  - {id: g-data, kind: group, parent: z-cluster, color: slate, icon: postgresql, title: "DATA", sub: "ns postgres · garage-s3"}
+  - {id: g-apps, kind: group, parent: z-cluster, color: indigo, icon: k8s-ns, title: "ARFFORNIA", sub: "4 namespaces arffornia-*"}
+  - {id: g-proxy, kind: group, parent: g-apps, color: sky, icon: k8s-ns, title: "PROXY", sub: "ns arffornia-proxy-velocity",
+     matches: ['k8s:arffornia-proxy-velocity/namespace/arffornia-proxy-velocity']}
+  - {id: g-server, kind: group, parent: g-apps, color: emerald, icon: k8s-ns, title: "GAME SERVER", sub: "ns arffornia-server-arcane",
+     matches: ['k8s:arffornia-server-arcane/namespace/arffornia-server-arcane']}
+  - {id: g-web, kind: group, parent: g-apps, color: cyan, icon: k8s-ns, title: "WEBSITE", sub: "ns arffornia-website",
+     matches: ['k8s:arffornia-website/namespace/arffornia-website']}
+  - {id: g-map, kind: group, parent: g-apps, color: amber, icon: k8s-ns, title: "MAP", sub: "ns arffornia-bluemap-web",
+     matches: ['k8s:arffornia-bluemap-web/namespace/arffornia-bluemap-web']}
+
+  # ── People and clients ─────────────────────────────────────────────────────
+  - {id: maintainer, kind: frontend, parent: z-team, shape: actor, icon: user, title: "Maintainer", desc: "or an AI agent"}
+  - {id: player, kind: frontend, parent: z-player-pc, shape: actor, icon: user, title: "Player"}
+  - id: launcher
+    kind: frontend
+    parent: z-player-pc
+    icon: electron
+    title: "Arffornia launcher"
+    tech: "[Electron 38 · Vue 3 · v0.1.15]"
+    desc: "Login, Java, mods, launch"
+  - id: game-dir
+    kind: database
+    parent: z-player-pc
+    shape: cylinder
+    icon: folder
+    title: "Game directory"
+    tech: "[.Arffornia_V.5.2, java]"
+    desc: "Mods, config, JRE"
+  - id: mc-client
+    kind: frontend
+    parent: z-player-pc
+    icon: openjdk
+    title: "Minecraft client"
+    tech: "[NeoForge · Arffornia mod]"
+    desc: "The game, spawned by MCLC"
+  - {id: browser, kind: frontend, parent: z-internet, shape: actor, icon: user, title: "Browser", desc: "visitor or player"}
+  - id: vote-sites
+    kind: external
+    parent: z-internet
+    icon: globe
+    title: "Vote sites"
+    tech: "[Votifier client]"
+    desc: "Notify a player's vote"
+
+  # ── Edge and home network ──────────────────────────────────────────────────
+  - id: cf-edge
+    kind: cloud
+    parent: z-cloudflare
+    icon: cloudflare
+    title: "Cloudflare proxy"
+    tech: "[map, www, vault, argocd…]"
+    desc: "TLS to origin dc_ip:443"
+    ports: [{name: https, protocol: TCP, port: 443}]
+  - id: router
+    kind: cloud
+    parent: z-home
+    icon: router
+    title: "Home router"
+    tech: "[NAT · port forwards]"
+    desc: "dc_ip → MetalLB VIPs"
+    ports:
+      - {name: minecraft, protocol: TCP, port: 25565}
+      - {name: https, protocol: TCP, port: 443}
+      - {name: nuvotifier, protocol: TCP, port: 8192}
+  - id: nas
+    kind: database
+    parent: z-nas
+    shape: cylinder
+    icon: folder
+    title: "NAS share"
+    tech: "[SMB · csi-driver-smb PVs]"
+    desc: "backups/arcane · bluemap"
+    ports: [{name: smb, protocol: TCP, port: 445}]
+
+  # ── Cluster platform ───────────────────────────────────────────────────────
+  - id: envoy
+    kind: backend
+    parent: g-gateway
+    icon: envoy-gateway
+    title: "Envoy shared-gateway"
+    tech: "[ns gateway-infra, LB .84]"
+    desc: "TLS *.arffornia.com, routes"
+    ports: [{name: https, protocol: TCP, port: 443}]
+    matches: ['k8s:gateway-infra/gateway/shared-gateway']
+  - id: metallb
+    kind: cloud
+    parent: g-lb
+    icon: metallb
+    title: "MetalLB"
+    tech: "[L2 · pool 192.168.1.82-123…]"
+    desc: "VIPs: Velocity, Envoy"
+  - id: prometheus
+    kind: backend
+    parent: g-obs
+    icon: prometheus
+    title: "Prometheus"
+    tech: "[kube-prometheus-stack]"
+    desc: "Scrapes, rules"
+  - id: alertmanager
+    kind: backend
+    parent: g-obs
+    icon: prometheus
+    title: "Alertmanager"
+    tech: "[AlertmanagerConfig]"
+    desc: "#arffornia webhook"
+    ports: [{name: web, protocol: TCP, port: 9093}]
+  - id: vso
+    kind: database
+    parent: g-secrets
+    icon: vault
+    title: "vault-secrets-operator"
+    tech: "[ricoberger v1.26 · 1 SA]"
+    desc: "VaultSecret CR → Secret"
+  - id: vault
+    kind: database
+    parent: g-secrets
+    icon: vault
+    title: "Vault"
+    tech: "[standalone · raft]"
+    desc: "kvv2/arffornia, postgres"
+    ports: [{name: api, protocol: TCP, port: 8200}]
+  - id: argocd
+    kind: backend
+    parent: g-gitops
+    icon: argo
+    title: "Argo CD"
+    tech: "[v3.3.9 · auto-sync, selfHeal]"
+    desc: "Applies infra@HEAD"
+  - id: postgres
+    kind: database
+    parent: g-data
+    shape: cylinder
+    icon: postgresql
+    title: "Postgres cluster"
+    tech: "[Zalando · PG 17 · 3 instances]"
+    desc: "dbs arffornia, luckperms"
+    ports: [{name: pg, protocol: TCP, port: 5432}]
+  - id: garage
+    kind: database
+    parent: g-data
+    shape: cylinder
+    icon: bucket
+    title: "Garage S3"
+    tech: "[in-cluster · postgres-backups]"
+    desc: "WAL-G base backups, keep 90"
+    ports: [{name: s3, protocol: TCP, port: 3900}]
+
+  # ── Arffornia workloads ────────────────────────────────────────────────────
+  - id: velocity
+    kind: backend
+    parent: g-proxy
+    icon: k8s-deploy
+    title: "Velocity proxy"
+    tech: "[3.4.0-SNAPSHOT · 2 LBs]"
+    desc: "NuVotifier, Arffornia_Proxy"
+    ports:
+      - {name: minecraft, protocol: TCP, port: 25565}
+      - {name: nuvotifier, protocol: TCP, port: 8192}
+    matches:
+      - 'k8s:arffornia-proxy-velocity/deployment/arffornia-proxy-velocity-minecraft-proxy'
+      - 'k8s:arffornia-proxy-velocity/service/arffornia-proxy-velocity-minecraft-proxy'
+      - 'k8s:arffornia-proxy-velocity/service/arffornia-proxy-velocity-minecraft-proxy-nuvotifier'
+  - id: arcane
+    kind: backend
+    parent: g-server
+    icon: k8s-deploy
+    title: "Server arcane"
+    tech: "[itzg · NeoForge 21.1 · 12G]"
+    desc: "Arffornia mod, BlueMap, bot"
+    ports:
+      - {name: minecraft, protocol: TCP, port: 25565}
+      - {name: rcon, protocol: TCP, port: 25575}
+      - {name: metrics, protocol: TCP, port: 19565}
+      - {name: bluemap-live, protocol: TCP, port: 8100}
+    matches:
+      - 'k8s:arffornia-server-arcane/deployment/arffornia-server-arcane-minecraft'
+      - 'k8s:arffornia-server-arcane/service/arffornia-server-arcane-minecraft'
+      - 'k8s:arffornia-server-arcane/service/arffornia-server-arcane-minecraft-rcon'
+      - 'k8s:arffornia-server-arcane/service/arffornia-server-arcane-minecraft-http-metrics'
+      - 'k8s:arffornia-server-arcane/service/arffornia-server-arcane-minecraft-bluemap-live'
+  - id: mc-backup
+    kind: tool
+    parent: g-server
+    icon: k8s-pod
+    title: "mc-backup"
+    tech: "[sidecar · itzg/mc-backup]"
+    desc: "Daily tar.gz, prune 14 d"
+  - id: config-updater
+    kind: tool
+    parent: g-server
+    icon: k8s-pod
+    title: "config-updater"
+    tech: "[init container · Nexus_Mods]"
+    desc: "Syncs mods + config, KIND"
+  - id: data-pvc
+    kind: database
+    parent: g-server
+    shape: cylinder
+    icon: longhorn
+    title: "/data volume"
+    tech: "[Longhorn PVC · RWO 30Gi]"
+    desc: "World, mods/, config/"
+  - id: website
+    kind: backend
+    parent: g-web
+    icon: laravel
+    title: "Website + API"
+    tech: "[Laravel 12, nginx + php-fpm]"
+    desc: "Shop, votes, progression API"
+    ports: [{name: http, protocol: TCP, port: 80}]
+    matches:
+      - 'k8s:arffornia-website/deployment/arffornia-website-chart'
+      - 'k8s:arffornia-website/service/arffornia-website-chart'
+      - 'k8s:arffornia-website/httproute/vault-route'
+  - id: bluemap-web
+    kind: backend
+    parent: g-map
+    icon: nginx
+    title: "BlueMap web"
+    tech: "[nginx 1.27 · map.*]"
+    desc: "Tiles from NAS, proxies live"
+    ports: [{name: http, protocol: TCP, port: 80}]
+    matches:
+      - 'k8s:arffornia-bluemap-web/deployment/bluemap-web'
+      - 'k8s:arffornia-bluemap-web/service/bluemap-web-service'
+      - 'k8s:arffornia-bluemap-web/httproute/bluemap-route'
+
+  # ── GitHub ─────────────────────────────────────────────────────────────────
+  - id: infra-repo
+    kind: external
+    parent: z-github
+    icon: github
+    title: "infra repo"
+    tech: "[TheGostsniperfr/infra]"
+    desc: "k8s/, terraform/"
+    ports: [{name: https, protocol: TCP, port: 443}]
+  - id: provisioning-repo
+    kind: external
+    parent: z-github
+    icon: github
+    title: "Provisioning repo"
+    tech: "[main = production · raw URLs]"
+    desc: "modList, storage/, index.json"
+    ports: [{name: https, protocol: TCP, port: 443}]
+  - id: index-bot
+    kind: tool
+    parent: z-github
+    icon: githubactions
+    title: "Index bot"
+    tech: "[generateExtIndex.yml]"
+    desc: "Commits index.json on push"
+  - id: release-ci
+    kind: tool
+    parent: z-github
+    icon: gradle
+    title: "Release workflows"
+    tech: "[Mods, Proxy · tag v*]"
+    desc: "gradle githubRelease"
+  - id: gh-releases
+    kind: external
+    parent: z-github
+    icon: github
+    title: "Mod + plugin releases"
+    tech: "[api.github.com · tag latest]"
+    desc: "arffornia.jar, arffornia_proxy"
+    ports: [{name: https, protocol: TCP, port: 443}]
+  - id: updater-build
+    kind: tool
+    parent: z-github
+    icon: githubactions
+    title: "Image build"
+    tech: "[build_app.yml · updater-*]"
+    desc: "Builds config-updater"
+  - id: ghcr
+    kind: external
+    parent: z-github
+    icon: github
+    title: "GHCR"
+    tech: "[ghcr.io/arffornia · images]"
+    desc: "config-updater:latest, charts"
+    ports: [{name: https, protocol: TCP, port: 443}]
+  - id: launcher-releases
+    kind: external
+    parent: z-github
+    icon: github
+    title: "Launcher releases"
+    tech: "[electron-updater]"
+    desc: "Installer + self-update"
+    ports: [{name: https, protocol: TCP, port: 443}]
+  - id: pr-repos
+    kind: external
+    parent: z-github
+    icon: github
+    title: "Pull requests"
+    tech: "[Provisioning · Mods · Proxy]"
+    desc: "Label preview, same-repo only"
+    ports: [{name: https, protocol: TCP, port: 443}]
+
+  # ── Third-party downloads ──────────────────────────────────────────────────
+  - id: curse-tools
+    kind: external
+    parent: z-downloads
+    icon: curseforge
+    title: "api.curse.tools"
+    tech: "[third-party CurseForge proxy]"
+    desc: "CF metadata, forgecdn URLs"
+    ports: [{name: https, protocol: TCP, port: 443}]
+  - id: modrinth
+    kind: external
+    parent: z-downloads
+    icon: modrinth
+    title: "Modrinth"
+    tech: "[api.modrinth.com/v2]"
+    desc: "Version metadata + files"
+    ports: [{name: https, protocol: TCP, port: 443}]
+  - id: azul
+    kind: external
+    parent: z-downloads
+    icon: openjdk
+    title: "Azul Zulu"
+    tech: "[api.azul.com · cdn.azul.com]"
+    desc: "Java 21 JRE, no checksum"
+    ports: [{name: https, protocol: TCP, port: 443}]
+  - id: neoforge-maven
+    kind: external
+    parent: z-downloads
+    icon: openjdk
+    title: "NeoForge maven"
+    tech: "[maven.neoforged.net]"
+    desc: "Installer 21.1.172"
+    ports: [{name: https, protocol: TCP, port: 443}]
+  - id: mojang-files
+    kind: external
+    parent: z-downloads
+    icon: globe
+    title: "Mojang game files"
+    tech: "[launchermeta · libraries]"
+    desc: "Version JSON, libs, assets"
+    ports: [{name: https, protocol: TCP, port: 443}]
+
+  # ── Microsoft and Mojang identity ──────────────────────────────────────────
+  - id: ms-login
+    kind: security
+    parent: z-microsoft
+    icon: microsoft
+    title: "Microsoft account"
+    tech: "[login.live.com · OAuth 2]"
+    desc: "Sign-in, code, refresh token"
+    ports: [{name: https, protocol: TCP, port: 443}]
+  - id: xbox-live
+    kind: security
+    parent: z-microsoft
+    icon: microsoft
+    title: "Xbox Live"
+    tech: "[XBL + XSTS auth]"
+    desc: "XBL token, XSTS token"
+    ports: [{name: https, protocol: TCP, port: 443}]
+  - id: mc-services
+    kind: security
+    parent: z-microsoft
+    icon: microsoft
+    title: "Minecraft services"
+    tech: "[api.minecraftservices]"
+    desc: "MC token, ownership, profile"
+    ports: [{name: https, protocol: TCP, port: 443}]
+  - id: mojang-session
+    kind: security
+    parent: z-microsoft
+    icon: microsoft
+    title: "Session server"
+    tech: "[sessionserver.mojang.com]"
+    desc: "join / hasJoined"
+    ports: [{name: https, protocol: TCP, port: 443}]
+
+  - id: discord
+    kind: external
+    parent: z-saas
+    icon: discord
+    title: "Discord"
+    tech: "[bot gateway · webhooks]"
+    desc: "Chat bridge, #alerts"
+    ports: [{name: https, protocol: TCP, port: 443}]
+
+  # ── Proposed: per-PR preview environments (infra audit §11), target M3 ─────
+  - {id: g-preview, kind: group, parent: z-cluster, color: emerald, icon: k8s-ns, title: "PREVIEW · ONE PER PR", sub: "ns arffornia-pr-<repo>-<n> · PSA restricted",
+     status: planned, target: M3}
+  - id: preview-server
+    kind: backend
+    parent: g-preview
+    icon: k8s-deploy
+    title: "Preview server"
+    tech: "[arffornia-server chart · 6G]"
+    desc: "baseUrl = bundle, no proxy"
+    status: planned
+    target: M3
+    ports:
+      - {name: minecraft, protocol: TCP, port: 25565}
+      - {name: rcon, protocol: TCP, port: 25575}
+  - id: preview-pg
+    kind: database
+    parent: g-preview
+    shape: cylinder
+    icon: postgresql
+    title: "Preview Postgres"
+    tech: "[Zalando CR · 1 instance · 1Gi]"
+    desc: "Credentials in namespace"
+    status: planned
+    target: M3
+    ports: [{name: pg, protocol: TCP, port: 5432}]
+  - id: preview-test
+    kind: tool
+    parent: g-preview
+    icon: k8s-pod
+    title: "Test Job"
+    tech: "[post-sync hook · rcon-cli]"
+    desc: "Waits Done, runs, greps logs"
+    status: planned
+    target: M3
+  - id: preview-netpol
+    kind: security
+    parent: g-preview
+    icon: k8s-crd
+    title: "NetworkPolicy"
+    tech: "[default-deny]"
+    desc: "Egress: internet + own DB"
+    status: planned
+    target: M3
+  - id: preview-quota
+    kind: security
+    parent: g-preview
+    icon: k8s-crd
+    title: "ResourceQuota"
+    tech: "[+ LimitRange]"
+    desc: "8 GiB, 3 CPU per preview"
+    status: planned
+    target: M3
+  - id: appset
+    kind: backend
+    parent: g-gitops
+    icon: argo
+    title: "ApplicationSet"
+    tech: "[PR generator · label preview]"
+    desc: "One App per labelled PR"
+    status: planned
+    target: M3
+  - id: appproject
+    kind: security
+    parent: g-gitops
+    icon: k8s-crd
+    title: "AppProject preview"
+    tech: "[dest arffornia-pr-*]"
+    desc: "No VaultSecret, PV, LB"
+    status: planned
+    target: M3
+  - id: mc-router
+    kind: backend
+    parent: g-lb
+    icon: k8s-deploy
+    title: "mc-router"
+    tech: "[one MetalLB IP · LAN/VPN]"
+    desc: "pr-<n>.preview.arffornia.com"
+    status: planned
+    target: M3
+    ports: [{name: minecraft, protocol: TCP, port: 25565}]
+  - id: bundle-store
+    kind: database
+    parent: g-data
+    shape: cylinder
+    icon: bucket
+    title: "Preview bundles"
+    tech: "[Garage · previews/<repo>-pr<n>]"
+    desc: "index.json + built jars, <sha>"
+    status: planned
+    target: M3
+    ports: [{name: s3, protocol: TCP, port: 3900}]
+  - id: bundle-ci
+    kind: tool
+    parent: z-github
+    icon: githubactions
+    title: "Preview bundle CI"
+    tech: "[on PR · per repo]"
+    desc: "Builds the immutable bundle"
+    status: planned
+    target: M3
+
+  # ── Tech-stack items (landscape only) ──────────────────────────────────────
+  - {id: t-kubernetes, kind: tool, icon: kubernetes, title: "Kubernetes", tech: "homelab nodes"}
+  - {id: t-cilium, kind: tool, icon: cilium, title: "Cilium 1.19", tech: "CNI, kube-proxy replacement"}
+  - {id: t-longhorn, kind: tool, icon: longhorn, title: "Longhorn 1.11", tech: "block volumes"}
+  - {id: t-certmanager, kind: tool, icon: cert-manager, title: "cert-manager", tech: "Let's Encrypt, DNS-01"}
+  - {id: t-helm-kustomize, kind: tool, icon: helm, title: "Kustomize + Helm", tech: "rendered by Argo CD"}
+  - {id: t-terraform, kind: tool, icon: terraform, title: "Terraform", tech: "Vault, Keycloak, DNS"}
+  - {id: t-renovate, kind: tool, icon: renovate, title: "Renovate", tech: "infra dependency PRs"}
+  - {id: t-trivy, kind: tool, icon: trivy, title: "Trivy", tech: "repo and image scans"}
+  - {id: t-neoforge, kind: tool, icon: openjdk, title: "NeoForge 21.1.172", tech: "Minecraft 1.21.1, Java 21"}
+  - {id: t-velocity, kind: tool, icon: openjdk, title: "Velocity 3.4", tech: "NuVotifier, LuckPerms"}
+  - {id: t-nexus, kind: tool, icon: typescript, title: "Nexus_Mods", tech: "mod sync library"}
+  - {id: t-grafana, kind: tool, icon: grafana, title: "Grafana", tech: "dashboards"}
+
+connections:
+  # ── Runtime: nominal path, a player joins ──────────────────────────────────
+  - {id: c-client-router, from: mc-client, to: router, kind: flow, port: minecraft, protocol: Minecraft, verb: join arffornia.com}
+  - {id: c-router-velocity, from: router, to: velocity, kind: flow, port: minecraft, protocol: TCP, verb: port-forward}
+  - {id: c-velocity-arcane, from: velocity, to: arcane, kind: flow, port: minecraft, protocol: Minecraft, verb: forward player (modern)}
+  - {id: c-arcane-envoy, from: arcane, to: envoy, kind: flow, port: https, protocol: HTTPS, verb: arffornia.com/api}
+  - {id: c-envoy-website, from: envoy, to: website, kind: flow, port: http, protocol: HTTP, verb: route arffornia.com}
+  - {id: c-website-postgres, from: website, to: postgres, kind: flow, port: pg, protocol: SQL, verb: query}
+
+  # ── Runtime: other traffic ─────────────────────────────────────────────────
+  - {id: c-client-router-api, from: mc-client, to: router, kind: flow, port: https, protocol: HTTPS, verb: GET /api (public)}
+  - {id: c-browser-router, from: browser, to: router, kind: flow, port: https, protocol: HTTPS, verb: GET arffornia.com}
+  - {id: c-browser-cf, from: browser, to: cf-edge, kind: flow, port: https, protocol: HTTPS, verb: GET map.arffornia.com}
+  - {id: c-cf-router, from: cf-edge, to: router, kind: flow, port: https, protocol: HTTPS, verb: to origin}
+  - {id: c-votesite-router, from: vote-sites, to: router, kind: flow, port: nuvotifier, protocol: Votifier, verb: send vote}
+  - {id: c-router-velocity-vote, from: router, to: velocity, kind: flow, port: nuvotifier, protocol: TCP, verb: port-forward}
+  - {id: c-router-envoy, from: router, to: envoy, kind: flow, port: https, protocol: TCP, verb: port-forward}
+  - {id: c-velocity-envoy, from: velocity, to: envoy, kind: flow, port: https, protocol: HTTPS, verb: POST /api/vote/nuvotifier}
+  - {id: c-envoy-bluemap, from: envoy, to: bluemap-web, kind: flow, port: http, protocol: HTTP, verb: route map.arffornia.com}
+  - {id: c-bluemap-arcane, from: bluemap-web, to: arcane, kind: flow, port: bluemap-live, protocol: HTTP, verb: proxy /maps/*/live/}
+  - {id: c-arcane-postgres, from: arcane, to: postgres, kind: flow, port: pg, protocol: SQL, verb: pending_rewards · LuckPerms}
+  - {id: c-velocity-postgres, from: velocity, to: postgres, kind: flow, port: pg, protocol: SQL, verb: LuckPerms}
+  - {id: c-arcane-discord, from: arcane, to: discord, kind: flow, port: https, protocol: WSS, verb: chat bridge bot}
+  - {id: c-arcane-nas, from: arcane, to: nas, kind: flow, port: smb, protocol: SMB, verb: write map tiles}
+  - {id: c-bluemap-nas, from: bluemap-web, to: nas, kind: flow, port: smb, protocol: SMB, verb: read map webroot}
+
+  # ── Runtime: background ────────────────────────────────────────────────────
+  - {id: c-vso-vault, from: vso, to: vault, kind: async, port: api, protocol: HTTPS, verb: read kvv2}
+  - {id: c-vso-apps, from: vso, to: g-apps, kind: async, protocol: K8s API, verb: write Secrets}
+  - {id: c-argocd-infra, from: argocd, to: infra-repo, kind: async, port: https, protocol: HTTPS, verb: pull HEAD}
+  - {id: c-argocd-apps, from: argocd, to: g-apps, kind: async, protocol: K8s API, verb: apply · prune · selfHeal}
+  - {id: c-prometheus-arcane, from: prometheus, to: arcane, kind: async, port: metrics, protocol: HTTP, verb: scrape every 5 s}
+  - {id: c-prometheus-alertmanager, from: prometheus, to: alertmanager, kind: async, port: web, protocol: HTTP, verb: fire alerts}
+  - {id: c-alertmanager-discord, from: alertmanager, to: discord, kind: async, port: https, protocol: HTTPS, verb: webhook}
+  - {id: c-backup-arcane, from: mc-backup, to: arcane, kind: async, port: rcon, protocol: RCON, verb: save-off / save-on}
+  - {id: c-backup-nas, from: mc-backup, to: nas, kind: async, port: smb, protocol: SMB, verb: daily world tar.gz}
+  - {id: c-postgres-garage, from: postgres, to: garage, kind: async, port: s3, protocol: S3, verb: WAL-G}
+
+  # ── Content delivery ───────────────────────────────────────────────────────
+  - {id: c-maintainer-provisioning, from: maintainer, to: provisioning-repo, kind: flow, port: https, protocol: Git, verb: push main}
+  - {id: c-indexbot-provisioning, from: index-bot, to: provisioning-repo, kind: flow, port: https, protocol: Git, verb: commit index.json}
+  - {id: c-updater-provisioning, from: config-updater, to: provisioning-repo, kind: flow, port: https, protocol: HTTPS, verb: GET modList + index + files}
+  - {id: c-updater-curse, from: config-updater, to: curse-tools, kind: flow, port: https, protocol: HTTPS, verb: resolve + download}
+  - {id: c-updater-modrinth, from: config-updater, to: modrinth, kind: flow, port: https, protocol: HTTPS, verb: resolve + download}
+  - {id: c-updater-ghreleases, from: config-updater, to: gh-releases, kind: flow, port: https, protocol: HTTPS, verb: GET release latest}
+  - {id: c-updater-pvc, from: config-updater, to: data-pvc, kind: flow, protocol: files, verb: write + delete unlisted}
+  - {id: c-arcane-pvc, from: arcane, to: data-pvc, kind: flow, protocol: files, verb: boot · substitute CFG_*}
+  - {id: c-launcher-azul, from: launcher, to: azul, kind: flow, port: https, protocol: HTTPS, verb: Java 21 (first run)}
+  - {id: c-launcher-neoforge, from: launcher, to: neoforge-maven, kind: flow, port: https, protocol: HTTPS, verb: installer}
+  - {id: c-launcher-provisioning, from: launcher, to: provisioning-repo, kind: flow, port: https, protocol: HTTPS, verb: GET modList + index + files}
+  - {id: c-launcher-curse, from: launcher, to: curse-tools, kind: flow, port: https, protocol: HTTPS, verb: resolve + download}
+  - {id: c-launcher-modrinth, from: launcher, to: modrinth, kind: flow, port: https, protocol: HTTPS, verb: resolve + download}
+  - {id: c-launcher-ghreleases, from: launcher, to: gh-releases, kind: flow, port: https, protocol: HTTPS, verb: GET release latest}
+  - {id: c-launcher-gamedir, from: launcher, to: game-dir, kind: flow, protocol: files, verb: write + delete unlisted}
+  - {id: c-launcher-mojang, from: launcher, to: mojang-files, kind: flow, port: https, protocol: HTTPS, verb: MCLC libs + assets}
+  - {id: c-releaseci-ghreleases, from: release-ci, to: gh-releases, kind: async, port: https, protocol: HTTPS, verb: publish jar}
+  - {id: c-updaterbuild-ghcr, from: updater-build, to: ghcr, kind: async, port: https, protocol: HTTPS, verb: push image}
+  - {id: c-launcher-selfupdate, from: launcher, to: launcher-releases, kind: async, port: https, protocol: HTTPS, verb: check update}
+
+  # ── Player login ───────────────────────────────────────────────────────────
+  - {id: c-player-launcher, from: player, to: launcher, kind: flow, protocol: UI, verb: Play}
+  - {id: c-launcher-mslogin, from: launcher, to: ms-login, kind: auth, port: https, protocol: HTTPS, verb: OAuth (msmc)}
+  - {id: c-launcher-xbox, from: launcher, to: xbox-live, kind: auth, port: https, protocol: HTTPS, verb: XBL + XSTS}
+  - {id: c-launcher-mcservices, from: launcher, to: mc-services, kind: auth, port: https, protocol: HTTPS, verb: login_with_xbox}
+  - {id: c-launcher-client, from: launcher, to: mc-client, kind: flow, protocol: process, verb: spawn java (MCLC)}
+  - {id: c-client-session, from: mc-client, to: mojang-session, kind: auth, port: https, protocol: HTTPS, verb: session join}
+  - {id: c-velocity-session, from: velocity, to: mojang-session, kind: auth, port: https, protocol: HTTPS, verb: hasJoined}
+
+  # ── Proposed previews (M3) ─────────────────────────────────────────────────
+  - {id: c-maintainer-pr, from: maintainer, to: pr-repos, kind: flow, port: https, protocol: HTTPS, verb: open PR + label preview, status: planned, target: M3}
+  - {id: c-bundleci-store, from: bundle-ci, to: bundle-store, kind: flow, port: s3, protocol: S3, verb: push bundle, status: planned, target: M3}
+  - {id: c-appset-prs, from: appset, to: pr-repos, kind: async, port: https, protocol: GitHub API, verb: poll PRs, status: planned, target: M3}
+  - {id: c-argocd-preview, from: argocd, to: g-preview, kind: async, protocol: K8s API, verb: sync · CreateNamespace, status: planned, target: M3}
+  - {id: c-previewserver-store, from: preview-server, to: bundle-store, kind: flow, port: s3, protocol: HTTP, verb: BASE_URL=<bundle>, status: planned, target: M3}
+  - {id: c-previewserver-pg, from: preview-server, to: preview-pg, kind: flow, port: pg, protocol: SQL, verb: query, status: planned, target: M3}
+  - {id: c-test-server, from: preview-test, to: preview-server, kind: flow, port: rcon, protocol: RCON, verb: run tests, status: planned, target: M3}
+  - {id: c-test-pr, from: preview-test, to: pr-repos, kind: flow, port: https, protocol: GitHub API, verb: comment results, status: planned, target: M3}
+  - {id: c-maintainer-mcrouter, from: maintainer, to: mc-router, kind: flow, port: minecraft, protocol: Minecraft, verb: join pr-<n> (LAN/VPN), status: planned, target: M3}
+  - {id: c-mcrouter-preview, from: mc-router, to: preview-server, kind: flow, port: minecraft, protocol: Minecraft, verb: route by host, status: planned, target: M3}
+  - {id: x-preview-prod-db, from: g-preview, to: postgres, kind: flow, verb: prod DB, denied: true, enforced_by: [preview-netpol], status: planned, target: M3}
+  - {id: x-preview-nas, from: g-preview, to: nas, kind: flow, verb: NAS + LAN 192.168.1.0/24, denied: true, enforced_by: [preview-netpol], status: planned, target: M3}
+
+references:
+  - {id: r-updater-image, from: config-updater, to: ghcr, kind: image :latest}
+  - {id: r-appset-project, from: appset, to: appproject, kind: spec.project, status: planned, target: M3}
+
+annotations:
+  - {id: G1, severity: medium, title: "Website not behind Cloudflare",
+     text: "The audit draws browsers → Cloudflare → Envoy. In terraform/dns.tf the apex arffornia.com is an A record with proxied = false: the site and API are reached directly on dc_ip. Only map, www, vault, argocd… are proxied.",
+     targets: [c-browser-router]}
+  - {id: G2, severity: high, title: "Server writes the website DB",
+     text: "The mod opens JDBC to postgres-cluster (db arffornia) and runs pending_rewards.commands as console commands. Website and game share a schema and a trust boundary.",
+     targets: [c-arcane-postgres]}
+  - {id: G3, severity: medium, title: "API hairpins via the public IP",
+     text: "Server and proxy call https://arffornia.com/api; the apex resolves to dc_ip, so in-cluster calls leave through the router (NAT loopback) and come back to Envoy.",
+     targets: [c-arcane-envoy, c-velocity-envoy]}
+  - {id: G4, severity: high, title: "Secrets: one operator identity",
+     text: "VSO reads https://vault.arffornia.com (proxied by Cloudflare) with one ServiceAccount bound to every Vault role: any VaultSecret in any namespace can read any Arffornia secret.",
+     targets: [c-vso-vault]}
+  - {id: G5, severity: medium, title: "No NetworkPolicy",
+     text: "RCON 25575, game 25565 (online-mode=false, forwarding secret only), metrics and BlueMap live are reachable from every pod. Postgres also has a LAN LoadBalancer.",
+     targets: [arcane]}
+  - {id: G6, severity: low, title: "Alerting gaps",
+     text: "ServiceMonitor scrapes every 5 s. CriticalServiceDown watches job arffornia-proxy-velocity and ingress-nginx, neither of which is scraped.",
+     targets: [prometheus]}
+  - {id: G7, severity: low, title: "Old repo URL",
+     text: "BASE_URL (config-updater) and JSON_MOD_LIST_URL (launcher) still point at Arffornia/Arffornia_Network and work only through GitHub's rename redirect.",
+     targets: [c-updater-provisioning, c-launcher-provisioning]}
+  - {id: G8, severity: high, title: "Failed lookups delete mods",
+     text: "Nexus_Mods logs a failed lookup or download, then deletes every jar not resolved and exits 0. A curse.tools hiccup boots a server or a player with mods missing.",
+     targets: [config-updater, launcher]}
+  - {id: G9, severity: medium, title: "No versioning",
+     text: "main of Provisioning is production for every server and launcher, and the mod and proxy jars are pinned to tag latest. config-updater and website images are :latest.",
+     targets: [provisioning-repo, gh-releases]}
+  - {id: G10, severity: medium, title: "Third-party CurseForge proxy",
+     text: "CurseForge metadata and download URLs come from api.curse.tools, not the official API.",
+     targets: [curse-tools]}
+  - {id: G11, severity: medium, title: "Unverified downloads",
+     text: "Java (Azul) and the NeoForge installer are downloaded with no checksum; mod hashes are only checked on files already present.",
+     targets: [c-launcher-azul, c-launcher-neoforge]}
+  - {id: G12, severity: high, title: "Committed service credentials",
+     text: "Arffornia_Proxy ships nuvotifier_service client id and secret in its default config.properties, in git since the first commit: anyone can mint a token and forge votes.",
+     targets: [c-velocity-envoy]}

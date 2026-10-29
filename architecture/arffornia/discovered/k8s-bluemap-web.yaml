@@ -1,0 +1,14 @@
+apiVersion: noodle/v1alpha1
+kind: Fragment
+provenance: {adapter: k8s, source: bluemap-web.yaml, ref: infra@b1e7bdc, observedAt: "2026-10-29T02:33:05Z"}
+elements:
+  - {id: 'k8s:arffornia-bluemap-web/deployment/bluemap-web', kind: backend, parent: 'k8s:arffornia-bluemap-web/namespace/arffornia-bluemap-web', tech: 'Deployment · nginx:1.27.0-alpine', ports: [{name: http, protocol: TCP, port: 8080}], src: {file: bluemap-web.yaml, line: 80}}
+  - {id: 'k8s:arffornia-bluemap-web/httproute/bluemap-route', kind: backend, parent: 'k8s:arffornia-bluemap-web/namespace/arffornia-bluemap-web', tech: HTTPRoute, desc: map.arffornia.com, src: {file: bluemap-web.yaml, line: 141}}
+  - {id: 'k8s:arffornia-bluemap-web/namespace/arffornia-bluemap-web', kind: group, src: {file: bluemap-web.yaml, line: 1}}
+  - {id: 'k8s:arffornia-bluemap-web/service/bluemap-web-service', kind: backend, parent: 'k8s:arffornia-bluemap-web/namespace/arffornia-bluemap-web', tech: Service, ports: [{name: "80", protocol: TCP, port: 80}], src: {file: bluemap-web.yaml, line: 53}}
+connections:
+  - {id: 'k8s:c/4a8681011a', from: 'k8s:arffornia-bluemap-web/service/bluemap-web-service', to: 'k8s:arffornia-bluemap-web/deployment/bluemap-web', port: http, kind: flow, src: {file: bluemap-web.yaml, line: 53}}
+references:
+  - {id: 'k8s:r/00022e5eb5', from: 'k8s:arffornia-bluemap-web/httproute/bluemap-route', to: 'k8s:arffornia-bluemap-web/service/bluemap-web-service', kind: backendRef, src: {file: bluemap-web.yaml, line: 141}}
+unresolved:
+  - {about: ['k8s:arffornia-bluemap-web/httproute/bluemap-route'], kind: missing-backend, value: 'k8s:gateway-infra/gateway/shared-gateway', hint: gateway, src: {file: bluemap-web.yaml, line: 141}}

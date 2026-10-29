@@ -1,0 +1,116 @@
+apiVersion: noodle/v1alpha1
+kind: View
+type: topology
+title: "Arffornia · Runtime · Who talks to whom"
+subtitle: "How players, browsers and vote sites reach Arffornia, and what each component talks to."
+meta:
+  - "Scope: the Arffornia namespaces on the homelab cluster and the shared services they use · infra@b1e7bdc, Provisioning@235d0b8, Mods@a72e114 · derived from code (kustomize build --enable-helm + app config), 2026-10-29"
+  - "Out of scope: server nexus (its Application is commented out in k8s/apps/arffornia/server: omitted) · Keycloak, Terraform · mod and config delivery (view content-delivery) · login order (view player-login)"
+  - "Not verified live (no cluster access): router port forwards and NAT loopback, MetalLB IPs of the Velocity Services (none pinned in code)"
+  - "v0.1 · source: architecture/arffornia/views/runtime.yaml"
+
+include:
+  - z-player-pc
+  - mc-client
+  - z-internet/**
+  - z-cloudflare/**
+  - z-home/**
+  - z-cluster
+  - g-lb
+  - metallb
+  - g-gateway/**
+  - g-secrets/**
+  - g-obs/**
+  - g-gitops
+  - argocd
+  - g-apps
+  - g-proxy/**
+  - g-web/**
+  - g-map/**
+  - g-server
+  - arcane
+  - mc-backup
+  - g-data
+  - postgres
+  - garage
+  - z-nas/**
+  - z-saas/**
+  - z-github
+  - infra-repo
+
+steps: [c-client-router, c-router-velocity, c-velocity-arcane, c-arcane-envoy, c-envoy-website, c-website-postgres]
+background: [c-vso-vault, c-vso-apps, c-argocd-infra, c-argocd-apps, c-prometheus-arcane, c-prometheus-alertmanager, c-alertmanager-discord, c-backup-arcane, c-backup-nas, c-postgres-garage]
+
+labels:
+  c-client-router: "join · TCP"
+  c-router-velocity: "DNAT · TCP"
+  c-velocity-arcane: "forward"
+  c-arcane-envoy: "API · HTTPS ◀ hairpin"
+  c-envoy-website: "route"
+  c-website-postgres: "db arffornia · SQL"
+  c-client-router-api: "API · HTTPS"
+  c-browser-router: "arffornia.com · HTTPS"
+  c-browser-cf: "map.arffornia.com"
+  c-cf-router: "origin · HTTPS"
+  c-votesite-router: "vote · Votifier"
+  c-router-velocity-vote: "NuVotifier · TCP"
+  c-router-envoy: "DNAT"
+  c-velocity-envoy: "vote · HTTPS ◀ hairpin"
+  c-envoy-bluemap: "map.arffornia.com"
+  c-bluemap-arcane: "/maps/*/live/"
+  c-arcane-postgres: "pending_rewards · SQL"
+  c-velocity-postgres: "LuckPerms · SQL"
+  c-arcane-discord: "chat bridge bot · WSS"
+  c-arcane-nas: "map tiles · SMB"
+  c-bluemap-nas: "webroot · SMB"
+  c-vso-vault: ""
+  c-vso-apps: "write Secrets"
+  c-argocd-infra: "pull HEAD"
+  c-argocd-apps: "apply"
+  c-prometheus-arcane: "scrape 5 s"
+  c-prometheus-alertmanager: ""
+  c-alertmanager-discord: "webhook"
+  c-backup-arcane: "RCON save-off"
+  c-backup-nas: "daily tar.gz · SMB"
+  c-postgres-garage: ""
+
+notes:
+  - {id: n-online-mode, text: "The server runs **online-mode=false**: it trusts Velocity's forwarding secret. Velocity checks the Mojang session (view player-login)."}
+  - {id: n-cloudflare, text: "Only proxied records cross Cloudflare: map, www, vault, argocd… The apex **arffornia.com is DNS-only** and hits dc_ip directly."}
+
+cards:
+  - {id: card-legend, title: "Legend", color: slate, legend: true}
+  - id: card-data-plane
+    title: "Request path · data plane"
+    color: cyan
+    lines:
+      - "A player joins and the server loads their progression."
+      - "[1] The Minecraft client connects to arffornia.com:25565, an A record on the home IP (DNS-only)."
+      - "[2] The router forwards to the Velocity LoadBalancer VIP announced by MetalLB."
+      - "[3] Velocity checks the Mojang session, then forwards the player to lobby = arcane:25565 with modern forwarding."
+      - "[4] The Arffornia mod calls https://arffornia.com/api (ensure-exists, stages/player): out through the router and back to Envoy."
+      - "[5] Envoy matches the HTTPRoute arffornia.com and proxies to the website Service."
+      - "[6] Laravel reads and writes the arffornia database."
+      - "Votes: vote site → router :8192 → NuVotifier on Velocity → POST /vote/nuvotifier (view vote-and-reward)."
+  - id: card-control-plane
+    title: "Background · control plane"
+    color: violet
+    lines:
+      - "[A] vault-secrets-operator reads kvv2 every 60 s with one Kubernetes role."
+      - "[B] It writes the Secrets of each VaultSecret (6 in arcane, 5 website, 3 proxy)."
+      - "[C] [D] Argo CD pulls infra@HEAD and applies k8s/apps/arffornia/** with prune and selfHeal."
+      - "[E] Prometheus scrapes the server's metrics port. [F] [G] app=minecraft alerts go to the Discord webhook_arffornia."
+      - "[H] [I] The mc-backup sidecar pauses saves over RCON and writes a daily tar.gz to the NAS, kept 14 days."
+      - "[J] Postgres ships WAL-G backups to in-cluster Garage, kept 90."
+      - "MetalLB (L2) announces the LoadBalancer VIPs of Velocity and of Envoy (192.168.1.84)."
+  - id: card-gaps
+    title: "Gaps and risks found in code"
+    color: orange
+    lines:
+      - "!!G1!! **No Cloudflare for the site.** Apex A record proxied = false; only subdomains are proxied."
+      - "!!G2!! **Server writes the website DB.** JDBC to db arffornia, runs pending_rewards.commands as console commands."
+      - "!!G3!! **API hairpin.** Server and proxy call the public hostname from inside the cluster."
+      - "!!G4!! **One Vault identity.** VSO's single SA is bound to every role; VSO reaches Vault through Cloudflare."
+      - "!!G5!! **No NetworkPolicy.** RCON, game port (online-mode=false), metrics and BlueMap live open to every pod."
+      - "!!G6!! **Alerting.** 5 s scrape; CriticalServiceDown watches jobs that are never scraped."
+      - "!!G12!! **Committed credentials.** Proxy plugin ships its nuvotifier_service client secret in git."

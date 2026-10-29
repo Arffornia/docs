@@ -1,0 +1,15 @@
+apiVersion: noodle/v1alpha1
+kind: Fragment
+provenance: {adapter: k8s, source: website.yaml, ref: infra@b1e7bdc, observedAt: "2026-10-29T02:33:05Z"}
+elements:
+  - {id: 'k8s:arffornia-website/deployment/arffornia-website-chart', kind: backend, parent: 'k8s:arffornia-website/namespace/arffornia-website', tech: 'Deployment · arffornia_website:latest', ports: [{name: http, protocol: TCP, port: 80}, {name: http, protocol: TCP, port: 9000}], src: {file: website.yaml, line: 108}}
+  - {id: 'k8s:arffornia-website/httproute/vault-route', kind: backend, parent: 'k8s:arffornia-website/namespace/arffornia-website', tech: HTTPRoute, desc: arffornia.com, src: {file: website.yaml, line: 217}}
+  - {id: 'k8s:arffornia-website/namespace/arffornia-website', kind: group, src: {file: website.yaml, line: 1}}
+  - {id: 'k8s:arffornia-website/service/arffornia-website-chart', kind: backend, parent: 'k8s:arffornia-website/namespace/arffornia-website', tech: Service, ports: [{name: http, protocol: TCP, port: 80}], src: {file: website.yaml, line: 69}}
+connections:
+  - {id: 'k8s:c/ad398c9458', from: 'k8s:arffornia-website/service/arffornia-website-chart', to: 'k8s:arffornia-website/deployment/arffornia-website-chart', port: http, kind: flow, src: {file: website.yaml, line: 69}}
+references:
+  - {id: 'k8s:r/8cbf479467', from: 'k8s:arffornia-website/httproute/vault-route', to: 'k8s:arffornia-website/service/arffornia-website-chart', kind: backendRef, src: {file: website.yaml, line: 217}}
+unresolved:
+  - {about: ['k8s:arffornia-website/httproute/vault-route'], kind: missing-backend, value: 'k8s:gateway-infra/gateway/shared-gateway', hint: gateway, src: {file: website.yaml, line: 217}}
+  - {kind: unknown-kind, value: ricoberger.de/VaultSecret, count: 5, src: {file: website.yaml, line: 233}}

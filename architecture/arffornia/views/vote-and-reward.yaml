@@ -1,0 +1,43 @@
+apiVersion: noodle/v1alpha1
+kind: View
+type: sequence
+title: "Arffornia · Vote and reward · From a vote site to items in game"
+subtitle: "How a vote on a server list becomes a pending reward, and how the player claims it in game."
+meta:
+  - "Scope: NuVotifier config and Arffornia_Proxy@1fcb8d0 (VoteListener, ApiService), Arffornia_Website (routes/api.php, VoteController, VoteService), Arffornia_Mods@a72e114 (RewardHandler, DatabaseManager) · derived from code, 2026-10-29"
+  - "A shop purchase on the website writes the same pending_rewards row (ShopItemsService) and is claimed the same way. The router and the API hairpin are not drawn (view runtime)."
+  - "v0.1 · source: architecture/arffornia/views/vote-and-reward.yaml"
+
+participants: [vote-sites, mc-client, router, velocity, arcane, envoy, website, postgres]
+
+steps:
+  # The vote: proxy plugin to the website API.
+  - {id: vote, from: vote-sites, to: router, over: c-votesite-router, text: "Votifier vote :8192"}
+  - {id: vote-fwd, from: router, to: velocity, over: c-router-velocity-vote, text: "port-forward to NuVotifier"}
+  - {note: velocity, text: "NuVotifier fires VotifierEvent · Arffornia_Proxy VoteListener"}
+  - {note: velocity, text: "no cached token: authenticate first"}
+  - {id: token, from: velocity, to: envoy, over: c-velocity-envoy, text: "POST /api/auth/token/svc {client_id, secret}"}
+  - {id: token-r, from: envoy, to: website, over: c-envoy-website}
+  - {reply: token-r, text: "Sanctum token, role nuvotifier_service, never expires"}
+  - {reply: token}
+  - {id: post, from: velocity, to: envoy, over: c-velocity-envoy, text: "POST /api/vote/nuvotifier {username, service, ip} · Bearer"}
+  - {id: post-r, from: envoy, to: website, over: c-envoy-website}
+  - {id: write, from: website, to: postgres, over: c-website-postgres, text: "INSERT votes · INSERT pending_rewards ['give <name> diamond 1']"}
+  - {reply: post-r, text: "200 (also 200 'ignored' for an unknown user)"}
+  - {reply: post}
+  - {note: velocity, text: "on 401: re-authenticate and retry, unbounded"}
+
+  # Later: the player claims in game, straight from the website DB.
+  - {note: arcane, text: "on join: SELECT 1 FROM pending_rewards → 'You have pending rewards'"}
+  - {id: claim, from: mc-client, to: router, over: c-client-router, text: "chat: /arffornia shop claim_reward"}
+  - {id: claim-nat, from: router, to: velocity, over: c-router-velocity, text: "same game connection"}
+  - {id: claim-fwd, from: velocity, to: arcane, over: c-velocity-arcane, text: "relay command packet"}
+  - {id: lookup, from: arcane, to: postgres, over: c-arcane-postgres, text: "SELECT id FROM users WHERE uuid = ?"}
+  - {reply: lookup, text: "user_id"}
+  - {id: lock, from: arcane, to: postgres, over: c-arcane-postgres, text: "BEGIN · SELECT … pending_rewards FOR UPDATE SKIP LOCKED"}
+  - {reply: lock, text: "rewards with their commands"}
+  - {note: arcane, text: "count free slots · run each command as console (op level) on the server thread"}
+  - {id: mark, from: arcane, to: postgres, over: c-arcane-postgres, text: "UPDATE pending_rewards SET status = 'claimed' · COMMIT"}
+  - {reply: claim-fwd, text: "'All your pending rewards have been claimed'"}
+  - {reply: claim-nat}
+  - {reply: claim}

@@ -1,0 +1,85 @@
+site_name: Arffornia Docs
+site_description: Architecture, components and contribution guide for the Arffornia modded Minecraft ecosystem.
+site_url: https://arffornia.github.io/docs/
+repo_url: https://github.com/Arffornia/docs
+repo_name: Arffornia/docs
+edit_uri: edit/main/docs/
+copyright: Arffornia — maintained by Brian Perret and contributors
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep orange
+      accent: amber
+      toggle: {icon: material/weather-night, name: Dark mode}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep orange
+      accent: amber
+      toggle: {icon: material/weather-sunny, name: Light mode}
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc: {permalink: true}
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed: {alternate_style: true}
+  - pymdownx.tasklist: {custom_checkbox: true}
+
+nav:
+  - Home: index.md
+  - Architecture:
+      - architecture/index.md
+      - Runtime: architecture/runtime.md
+      - Content delivery: architecture/content-delivery.md
+      - Flows: architecture/flows.md
+      - Tech stack: architecture/tech-stack.md
+      - Repositories: architecture/repositories.md
+      - Preview environments (planned): architecture/previews.md
+  - Components:
+      - components/index.md
+      - Website: components/website.md
+      - Launcher: components/launcher.md
+      - Mod: components/mod.md
+      - Proxy plugin: components/proxy.md
+      - Provisioning: components/provisioning.md
+      - Nexus libraries: components/nexus-libs.md
+      - Infrastructure: components/infra.md
+  - Contributing:
+      - contributing/index.md
+      - Workflow: contributing/workflow.md
+      - Standards: contributing/standards.md
+      - Working with AI agents: contributing/ai-agents.md
+      - Diagrams: contributing/diagrams.md
+  - Decisions:
+      - decisions/index.md
+      - 0001 Record decisions: decisions/0001-record-decisions.md
+      - 0002 English codebase, bilingual players: decisions/0002-english-codebase-bilingual-players.md
+      - 0003 Keep the owner's libraries: decisions/0003-keep-owner-libraries.md
+      - 0004 GitHub issues as tracker: decisions/0004-github-issues-as-tracker.md
+      - 0005 Docs as code: decisions/0005-docs-as-code.md
+      - 0006 Recipes as a datapack: decisions/0006-recipes-as-datapack.md
+      - 0007 Preview environments: decisions/0007-preview-environments.md
+      - Template: decisions/template.md
+  - Roadmap: roadmap.md
+  - Glossary: glossary.md

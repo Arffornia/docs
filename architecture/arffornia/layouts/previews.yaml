@@ -1,0 +1,68 @@
+apiVersion: noodle/v1alpha1
+kind: Layout
+canvas: {width: 2900, height: 1810}
+
+# Team left, cluster centre (GitOps on top, the proposed preview namespace in the
+# middle, the current data and game server dimmed on the right), GitHub right.
+# Corridors: y 480-820 under GitOps, x 1660-1760 between PREVIEW and DATA,
+# x 2200-2260 between the cluster and GitHub. Waypoints are canvas points.
+
+elements:
+  z-team: {x: 40, y: 300, w: 200, h: 200}
+  maintainer: {x: 72, y: 70, w: 56, h: 56}
+
+  z-cluster: {x: 300, y: 260, w: 1900, h: 1120}
+  g-gitops: {x: 40, y: 60, w: 1060, h: 160}
+  argocd: {x: 30, y: 50, w: 260, h: 90}
+  appset: {x: 360, y: 50, w: 320, h: 90}
+  appproject: {x: 740, y: 50, w: 290, h: 90}
+  g-apps: {x: 1460, y: 60, w: 400, h: 260}
+  g-server: {x: 30, y: 60, w: 340, h: 170}
+  arcane: {x: 20, y: 50, w: 300, h: 100}
+  g-lb: {x: 40, y: 560, w: 300, h: 300}
+  metallb: {x: 30, y: 50, w: 240, h: 80}
+  mc-router: {x: 30, y: 180, w: 240, h: 100}
+  g-preview: {x: 400, y: 560, w: 960, h: 440}
+  preview-test: {x: 40, y: 70, w: 300, h: 100}
+  preview-quota: {x: 390, y: 70, w: 240, h: 100}
+  preview-netpol: {x: 670, y: 70, w: 240, h: 100}
+  preview-server: {x: 40, y: 250, w: 300, h: 110}
+  preview-pg: {x: 620, y: 250, w: 300, h: 120}
+  g-data: {x: 1460, y: 560, w: 400, h: 500}
+  postgres: {x: 40, y: 60, w: 300, h: 120}
+  garage: {x: 40, y: 220, w: 300, h: 100}
+  bundle-store: {x: 40, y: 360, w: 300, h: 100}
+
+  z-github: {x: 2260, y: 540, w: 600, h: 240}
+  pr-repos: {x: 30, y: 70, w: 250, h: 100}
+  bundle-ci: {x: 320, y: 70, w: 250, h: 100}
+
+edges:
+  # request path
+  c-maintainer-pr: {from: maintainer.right@20px, to: pr-repos.top@220px, waypoints: [[270, 390], [270, 230], [2510, 230]], label_at: [1300, 230]}
+  c-bundleci-store: {from: bundle-ci.bottom@40px, to: bundle-store.right@70px, waypoints: [[2620, 800], [2215, 800], [2215, 1250]], label_at: [2215, 1050], against_flow: true}
+  c-appset-prs: {from: appset.bottom@280px, to: pr-repos.left@60px, waypoints: [[980, 600], [2245, 600], [2245, 670]], label_at: [1600, 600]}
+  c-argocd-preview: {from: argocd.bottom@60px, to: g-preview.top@480px, waypoints: [[430, 640], [1180, 640]], label_at: [800, 640]}
+  c-previewserver-store: {from: preview-server.bottom@260px, to: bundle-store.left@60px, waypoints: [[1000, 1240]], label_at: [1400, 1240]}
+  c-previewserver-pg: {from: preview-server.right@70px, to: preview-pg.left@70px}
+  c-test-server: {from: preview-test.bottom@150px, to: preview-server.top@150px}
+  c-test-pr: {from: preview-test.right@20px, to: pr-repos.left@85px, waypoints: [[1065, 910], [1065, 860], [2235, 860], [2235, 695]], label_at: [1400, 860]}
+
+  # access
+  c-maintainer-mcrouter: {from: maintainer.right@45px, to: mc-router.left@75px, waypoints: [[255, 415], [255, 1075]], label_at: [255, 760]}
+  c-mcrouter-preview: {from: mc-router.right@60px, to: preview-server.left@75px, waypoints: [[670, 1060], [670, 1145]]}
+
+  # what must not happen
+  x-preview-prod-db: {from: g-preview.right@130px, to: postgres.left@70px}
+
+  # current platform, dimmed
+  c-argocd-apps: {from: argocd.bottom@200px, to: g-apps.left@100px, waypoints: [[570, 540], [1720, 540], [1720, 420]], label_at: [1150, 540]}
+  c-postgres-garage: {from: postgres.bottom, to: garage.top}
+  c-arcane-postgres: {from: arcane.bottom@270px, to: postgres.top@280px}
+  r-appset-project: {from: appset.right, to: appproject.left}
+
+cards:
+  card-legend: {x: 40, y: 1440, w: 700, h: 330}
+  card-data-plane: {x: 770, y: 1440, w: 900, h: 330}
+  card-guardrails: {x: 1700, y: 1440, w: 640, h: 330}
+  card-open: {x: 2370, y: 1440, w: 490, h: 330}

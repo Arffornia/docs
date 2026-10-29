@@ -1,0 +1,30 @@
+# Arffornia
+
+Arffornia is a modded Minecraft server (NeoForge 1.21.1) built around a **progression system
+inspired by Satisfactory**: milestones, a Space Elevator and machines that gate a large tech
+modpack, so every mod stays worth playing. Players install a custom launcher, sign in with
+Microsoft, and join through a proxy; a website handles accounts, the shop, votes and the
+progression editor. Everything runs on a Kubernetes homelab managed with GitOps.
+
+![Runtime overview](assets/diagrams/runtime.light.png#only-light)
+![Runtime overview](assets/diagrams/runtime.dark.png#only-dark)
+
+## Where to go
+
+| I want to… | Read |
+|---|---|
+| Understand how it fits together | [Architecture](architecture/index.md) |
+| Work on one part | [Components](components/index.md) |
+| Contribute a fix or a feature | [Contributing](contributing/index.md) |
+| Know why something is the way it is | [Decisions](decisions/index.md) |
+| See what is next | [Roadmap](roadmap.md) |
+
+## At a glance
+
+| | |
+|---|---|
+| Game | Minecraft 1.21.1, NeoForge 21.1, ~330 mods |
+| Components | website, launcher, mod, proxy plugin, provisioning, four Nexus libraries |
+| Languages | PHP, JavaScript, TypeScript, Java |
+| Platform | Kubernetes, Argo CD, Vault, Postgres, Longhorn, Prometheus |
+| Players | French and English |
