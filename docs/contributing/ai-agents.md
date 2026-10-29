@@ -9,13 +9,17 @@ maintainer. The same rules apply to people and agents; agents just follow them m
 2. An agent reads the repo's `AGENTS.md`, the issue and the relevant ADRs.
 3. It branches, implements, adds tests, runs `make check`, and opens a pull request that says
    how it was tested and what a human should try.
-4. The maintainer reviews, asks for changes in the PR, and merges. Agents never merge.
+4. When the PRs of one outcome are green, it opens a **chantier** with a summary page and the
+   decisions to take ([operating model](operating-model.md)).
+5. The maintainer validates the chantier; an orchestrator merges it in order. Agents never
+   merge on their own.
 
 ## What agents may and may not do
 
 | May | May not |
 |---|---|
-| Open issues, branches and pull requests | Merge, tag, release, delete branches |
+| Open issues, branches and pull requests | Merge, tag, release, delete branches (only the orchestrator, after approval) |
+| Open chantiers and add `chantier: review` | Add `chantier: approved` to their own work |
 | Run builds and tests, install dev dependencies | Read or write secrets, change repo settings |
 | Propose ideas as `proposal` issues | Implement `needs-decision` issues |
 | Improve the Nexus libraries | Replace them with third-party packages |
