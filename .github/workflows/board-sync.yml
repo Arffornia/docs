@@ -10,7 +10,7 @@ concurrency: {group: board-sync, cancel-in-progress: false}
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v5
       - name: Sync board
