@@ -86,5 +86,6 @@ nav:
       - 001 Recipes as a datapack: specs/001-recipes-datapack.md
       - 002 Machine framework: specs/002-machine-framework.md
       - 003 Machine tier plan: specs/003-machine-tier-plan.md
+      - 007 Loading and title screen: specs/007-loading-and-title-screen.md
   - Roadmap: roadmap.md
   - Glossary: glossary.md
