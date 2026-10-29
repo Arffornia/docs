@@ -1,146 +1,268 @@
 #!/usr/bin/env python3
-"""Render the Arffornia ecosystem wheel (profile/ecosystem.{dark,light}.svg).
+"""Render the Arffornia ecosystem map (profile/ecosystem.{light,dark}.svg).
 
-Three cores (Play, Build, Run), nine capabilities, and every building block around them,
-inside a slowly turning cog. Text is converted to paths (Chakra Petch) like the banner.
-Edit ECOSYSTEM below to add or move a block, then run: python3 scripts/ecosystem.py profile
+A hub (the Arffornia brand) framed by three compartments of projects, standing on MaaS,
+the platform that hosts them. Everything is driven by the data below: add a project to
+PROJECTS (and, if needed, a group to GROUPS) and run
+
+    python3 scripts/ecosystem.py profile && cp profile/ecosystem.*.svg docs/assets/
+
+Text is shaped with HarfBuzz (kerning) and converted to paths with fontTools, because GitHub
+strips external fonts from SVG images. Fonts (OFL, in profile/fonts): Archivo for text,
+JetBrains Mono for repository names, Chakra Petch for the wordmark (same as the banner).
+Requires: pip install fonttools uharfbuzz
 """
-import math, os, sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from profile_banner import text_path, FONTS
+import os, sys
+import uharfbuzz as hb
+from fontTools.ttLib import TTFont
+from fontTools.pens.svgPathPen import SVGPathPen
+from fontTools.pens.transformPen import TransformPen
 
-# core -> capabilities -> (blocks; a trailing "*" marks a planned block)
-ECOSYSTEM = [
-    ("PLAY", "player journey", [
-        ("Launcher", "rocket", ["Electron launcher", "Microsoft login", "Modpack sync", "Shader browser"]),
-        ("Website", "globe", ["Accounts & profiles", "Shop", "Progression editor", "Public API"]),
-        ("Community", "chat", ["Votes & rewards", "Discord bridge", "Live map", "Rankings*"]),
-    ]),
-    ("BUILD", "the game", [
-        ("Mod", "gear", ["Progression graph", "Space Elevator", "Crafter", "Machines*"]),
-        ("Modpack", "box", ["~330 mods", "Provisioning", "Config updater", "Datapack recipes*"]),
-        ("Libraries", "puzzle", ["Nexus Mods", "Nexus Java", "Nexus Logger", "Nexus Saver"]),
-    ]),
-    ("RUN", "the platform", [
-        ("Infrastructure", "server", ["NeoForge servers", "Velocity proxy", "Kubernetes", "Argo CD GitOps"]),
-        ("Data & trust", "shield", ["Postgres", "Vault secrets", "Backups", "Monitoring"]),
-        ("Engineering", "spark", ["Docs & Noodle", "AI agent kit", "CI & tests", "Preview servers*"]),
-    ]),
-]
+# --------------------------------------------------------------------------- content
+ORG = "Arffornia"  # repos written without an owner live in this organisation
 
-THEMES = {
-    "dark": dict(bg="#0b1115", ring="#121b21", panel="#151f26", edge="#22303a", ink="#e6ecef", muted="#8da0ab",
-                 hub="#0f171c", hub_ink="#ffb36b", cog="#1b262e", planned="#6f838f",
-                 cores=["#e0703c", "#2bb3a6", "#5b7cfa"], tints=["#3a2216", "#123532", "#1c2547"]),
-    "light": dict(bg="#f5f7f8", ring="#e9eef1", panel="#ffffff", edge="#d3dbe0", ink="#172026", muted="#5a6a74",
-                  hub="#ffffff", hub_ink="#b4572a", cog="#dfe6ea", planned="#8a98a1",
-                  cores=["#c25a24", "#0f8f86", "#3e5fd8"], tints=["#f8e2d6", "#d6f0ed", "#dfe6fd"]),
+# slot: "top" (row above the hub), "left" or "right" (columns beside the hub)
+GROUPS = {
+    "play": dict(label="Play", tag="what players touch", slot="top"),
+    "game": dict(label="Game", tag="the modded server", slot="left"),
+    "tools": dict(label="Toolkit", tag="built from scratch", slot="right"),
 }
 
-S = 1200; C = S / 2
-R_HUB, R_CORE, R_CAP, R_ITEM, R_COG = 96, 214, 338, 520, 548
+# (group, display name, repo(s), one-line benefit[, chips])
+PROJECTS = [
+    ("play", "Arffornia Launcher", "Arffornia_Launcher_V.5.2", "Microsoft login, Java, modpack and shaders in one click"),
+    ("play", "Arffornia Website", "Arffornia_Website", "Accounts, shop, votes, progression editor and public API"),
+    ("play", "Keycloak theme", "keycloak-theme-arffornia", "The sign-in pages, in Arffornia colours"),
+    ("game", "Arffornia Mod", "Arffornia_Mods", "Progression graph, Space Elevator, Crafter, machines to come"),
+    ("game", "Arffornia Provisioning", "Arffornia_Provisioning", "Around 330 mods, defined once and kept up to date"),
+    ("game", "Arffornia Proxy", "Arffornia_Proxy", "Votes from server lists, rewarded in game"),
+    ("tools", "Nexus libraries", "Nexus_*", "The launcher's TypeScript stack", ["Mods", "Java", "Logger", "Saver"]),
+    ("tools", "Arffornia Docs + Noodle", "docs · TheGostsniperfr/Noodle", "Architecture docs, with diagrams written as code"),
+    ("tools", "Agent Kit", "agent-kit", "The AI agent harness the project is built with"),
+]
+
+HUB = dict(lines=["One account.", "One modpack.", "One network."], foot="Modded Minecraft · NeoForge 1.21.1")
+
+# MaaS: the platform every project above runs on. (benefit, planned)
+MAAS = dict(kicker="MaaS", name="Minecraft as a Service", repo="TheGostsniperfr/infra",
+            pitch="Provision a Minecraft server in a few clicks.",
+            points=[("One address for every server", False), ("The whole network declared in Git", False),
+                    ("A preview server for every change", True)])
+
+# --------------------------------------------------------------------------- design tokens
+THEMES = {
+    "light": dict(
+        canvas="#f3f5f6", card="#ffffff", line="#dbe2e6", grid="#efd6c6",
+        ink="#141b20", body="#3b4852", muted="#5f6d77",
+        hub="#fbeee6", hub_ink="#8f3b14", brand=("#c25a24", "#8f3b14"),
+        accent={"play": "#c25a24", "game": "#0e7a72", "tools": "#46596a"},
+        accent_txt={"play": "#a8461a", "game": "#0e7a72", "tools": "#46596a"},
+        chip="#eef2f4", chip_ink="#3b4852",
+        base="#172026", base_line="#2a3741", on_base="#eef2f4", on_base_muted="#a9b6be", ember="#f0874a"),
+    "dark": dict(
+        canvas="#0e1418", card="#151d23", line="#26323b", grid="#3a2a20",
+        ink="#e8edf0", body="#b3c0c8", muted="#8d9ca6",
+        hub="#1d1915", hub_ink="#f0a070", brand=("#f39a5f", "#e0703c"),
+        accent={"play": "#e0703c", "game": "#3fb7ab", "tools": "#8ea3b4"},
+        accent_txt={"play": "#f0915a", "game": "#4fc4b8", "tools": "#9fb2c2"},
+        chip="#1e2830", chip_ink="#b3c0c8",
+        base="#e8edf0", base_line="#cdd6dc", on_base="#141b20", on_base_muted="#4f5d67", ember="#b04d1c"),
+}
+
+# grid: 1080 wide, 40 margin, 20 gutter
+W, M, G = 1080, 40, 20
+COL = (W - 2 * M - 2 * G) / 3
+PAD = 24
+
+# --------------------------------------------------------------------------- typography
+FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "profile", "fonts")
+FACES = {"display": "Archivo-SemiExpandedBold.ttf", "semi": "Archivo-SemiExpandedSemiBold.ttf",
+         "medium": "Archivo-Medium.ttf", "text": "Archivo-Regular.ttf",
+         "mono": "JetBrainsMono-Regular.ttf", "monomed": "JetBrainsMono-Medium.ttf", "brand": "ChakraPetch-Bold.ttf"}
+_fonts = {}
 
 
-def pol(r, a):
-    a = math.radians(a - 90)
-    return C + r * math.cos(a), C + r * math.sin(a)
+def _font(face):
+    if face not in _fonts:
+        path = os.path.join(FONT_DIR, FACES[face]); tt = TTFont(path)
+        _fonts[face] = (hb.Font(hb.Face(hb.Blob.from_file_path(path))), tt.getGlyphSet(), tt["head"].unitsPerEm, tt.getGlyphOrder())
+    return _fonts[face]
 
 
-def sector(r1, r2, a1, a2, gap=0.0):
-    """Annular sector path from angle a1 to a2 (degrees, 0 = top, clockwise)."""
-    a1 += gap; a2 -= gap
-    large = 1 if a2 - a1 > 180 else 0
-    p1, p2, p3, p4 = pol(r2, a1), pol(r2, a2), pol(r1, a2), pol(r1, a1)
-    return (f"M{p1[0]:.1f} {p1[1]:.1f} A{r2} {r2} 0 {large} 1 {p2[0]:.1f} {p2[1]:.1f} "
-            f"L{p3[0]:.1f} {p3[1]:.1f} A{r1} {r1} 0 {large} 0 {p4[0]:.1f} {p4[1]:.1f}Z")
+def _shape(txt, face, size, tracking):
+    hbf, _, upm, order = _font(face)
+    buf = hb.Buffer(); buf.add_str(txt); buf.guess_segment_properties()
+    hb.shape(hbf, buf, {"kern": True, "liga": True})
+    s = size / upm; out = []; x = 0.0
+    for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
+        out.append((order[info.codepoint], x + pos.x_offset * s, -pos.y_offset * s))
+        x += pos.x_advance * s + tracking
+    return out, s, (x - tracking if out else 0.0)
 
 
-def text_width(txt, font, size, tracking=0.0):
-    f = FONTS[font]; gs = f.getGlyphSet(); cmap = f.getBestCmap(); s = size / f["head"].unitsPerEm
-    return sum(gs[cmap[ord(ch)]].width * s + tracking for ch in txt if ord(ch) in cmap) - tracking
+def width(txt, face, size, tracking=0.0):
+    return _shape(txt, face, size, tracking)[2]
 
 
-def centered(txt, font, size, x, y, fill, tracking=0.0, extra=""):
-    w = text_width(txt, font, size, tracking)
-    d, _ = text_path(txt, font, size, x - w / 2, y, tracking)
-    return f'<path d="{d}" fill="{fill}" {extra}/>'
+_defs = {}  # (face, glyph) -> (id, path in font units); emitted once in <defs>, reused with <use>
 
 
-def icon(name, x, y, color, s=1.0):
-    """Small line icons drawn on a 28 px grid centred on (x, y)."""
-    st = f'fill="none" stroke="{color}" stroke-width="{2.4 * s:.1f}" stroke-linecap="round" stroke-linejoin="round"'
-    t = f'transform="translate({x - 14 * s:.1f} {y - 14 * s:.1f}) scale({s})"'
-    shapes = {
-        "rocket": '<path d="M14 2c5 4 7 10 5 17h-10C7 12 9 6 14 2z"/><circle cx="14" cy="11" r="2.4"/><path d="M9 19l-4 5 6-1M19 19l4 5-6-1M12 23l2 4 2-4"/>',
-        "globe": '<circle cx="14" cy="14" r="11"/><path d="M3 14h22M14 3c4 4 4 18 0 22M14 3c-4 4-4 18 0 22"/>',
-        "chat": '<path d="M4 6h20v13H12l-6 5v-5H4z"/><path d="M9 12h10M9 16h6"/>',
-        "gear": '<circle cx="14" cy="14" r="4"/><path d="M14 2v4M14 22v4M2 14h4M22 14h4M5.5 5.5l2.8 2.8M19.7 19.7l2.8 2.8M5.5 22.5l2.8-2.8M19.7 8.3l2.8-2.8"/><circle cx="14" cy="14" r="8.5"/>',
-        "box": '<path d="M14 3l10 5v12l-10 5-10-5V8z"/><path d="M4 8l10 5 10-5M14 13v12"/>',
-        "puzzle": '<path d="M5 9h5a3 3 0 1 1 6 0h5v5a3 3 0 1 0 0 6v4H5v-5a3 3 0 1 1 0-6z"/>',
-        "server": '<rect x="4" y="4" width="20" height="8" rx="2"/><rect x="4" y="16" width="20" height="8" rx="2"/><path d="M8 8h2M8 20h2"/>',
-        "shield": '<path d="M14 3l9 4v6c0 6-4 10-9 12-5-2-9-6-9-12V7z"/><path d="M10 14l3 3 5-6"/>',
-        "spark": '<path d="M14 3v6M14 19v6M3 14h6M19 14h6M7 7l3 3M18 18l3 3M7 21l3-3M18 10l3-3"/><circle cx="14" cy="14" r="2.5"/>',
-    }
-    return f'<g {t} {st}>{shapes[name]}</g>'
+def _glyph(face, name):
+    key = (face, name)
+    if key not in _defs:
+        gs = _font(face)[1]; pen = SVGPathPen(gs, ntos=lambda v: str(round(v)))
+        gs[name].draw(pen)
+        _defs[key] = (f"g{len(_defs)}", pen.getCommands())
+    return _defs[key][0]
+
+
+def text(txt, face, size, x, y, fill, anchor="start", tracking=0.0):
+    """Text as reused glyph outlines (paths), baseline at y."""
+    glyphs, s, w = _shape(txt, face, size, tracking)
+    x -= {"start": 0, "middle": w / 2, "end": w}[anchor]
+    gs = _font(face)[1]; uses = []
+    for name, gx, gy in glyphs:
+        if not gs[name].width or name in ("space", "uni00A0"):
+            continue
+        uses.append(f'<use href="#{_glyph(face, name)}" transform="translate({x + gx:.1f} {y + gy:.1f}) scale({s:.5f} -{s:.5f})"/>')
+    return f'<g fill="{fill}">{"".join(uses)}</g>'
+
+
+def glyph_defs():
+    return "<defs>" + "".join(f'<path id="{i}" d="{d}"/>' for i, d in _defs.values()) + "</defs>"
+
+
+def wrap(txt, face, size, maxw):
+    lines, cur = [], ""
+    for word in txt.split():
+        t = f"{cur} {word}".strip()
+        if cur and width(t, face, size) > maxw:
+            lines.append(cur); cur = word
+        else:
+            cur = t
+    return lines + ([cur] if cur else [])
+
+
+# --------------------------------------------------------------------------- components
+NAME, REPO, BODY, LH = 22, 14.5, 17, 23  # type scale
+
+
+def group_label(c, key, x, y):
+    g = GROUPS[key]; lab = g["label"].upper()
+    lw = width(lab, "monomed", 14, 2.4)
+    return (f'<rect x="{x}" y="{y - 10}" width="10" height="10" rx="1" fill="{c["accent"][key]}"/>'
+            + text(lab, "monomed", 14, x + 20, y, c["ink"], tracking=2.4)
+            + text(g["tag"], "text", 16, x + 20 + lw + 12, y, c["muted"]))
+
+
+def card_height(p, w):
+    lines = len(wrap(p[3], "text", BODY, w - 2 * PAD))
+    return 92 + lines * LH + (40 if len(p) > 4 else 0) + 12
+
+
+def card(c, p, x, y, w, h):
+    key, name, repo, blurb = p[:4]
+    o = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="12" fill="{c["card"]}" stroke="{c["line"]}"/>',
+         f'<rect x="{x + PAD}" y="{y}" width="24" height="3" fill="{c["accent"][key]}"/>',
+         text(name, "display", min(NAME, NAME * (w - 2 * PAD) / width(name, "display", NAME)), x + PAD, y + 44, c["ink"]),
+         text(repo, "mono", REPO, x + PAD, y + 70, c["accent_txt"][key])]
+    ty = y + 104
+    for ln in wrap(blurb, "text", BODY, w - 2 * PAD):
+        o.append(text(ln, "text", BODY, x + PAD, ty, c["body"])); ty += LH
+    if len(p) > 4:
+        cx = x + PAD; cy = ty - 6
+        for chip in p[4]:
+            cw = width(chip, "monomed", 13.5) + 20
+            o.append(f'<rect x="{cx:.1f}" y="{cy}" width="{cw:.1f}" height="26" rx="6" fill="{c["chip"]}"/>')
+            o.append(text(chip, "monomed", 13.5, cx + 10, cy + 18, c["chip_ink"]))
+            cx += cw + 8
+    return "".join(o)
+
+
+def iso_grid(c, x, y, w, h, step=32):
+    """Faint isometric grid (the banner's motif), clipped to the hub."""
+    d = []; k = 0.57735  # tan(30)
+    for i in range(-int(h / k / step) - 2, int(w / step) + 2):
+        x0 = x + i * step
+        d.append(f"M{x0:.1f} {y}l{h / k:.1f} {h:.1f}")
+    for i in range(0, int((w + h / k) / step) + 2):
+        x0 = x + i * step
+        d.append(f"M{x0:.1f} {y}l{-h / k:.1f} {h:.1f}")
+    return (f'<defs><clipPath id="hubclip"><rect x="{x}" y="{y}" width="{w}" height="{h}" rx="16"/></clipPath>'
+            f'<radialGradient id="fade" cx=".5" cy=".42" r=".75"><stop offset=".25" stop-color="#fff" stop-opacity="0"/>'
+            f'<stop offset="1" stop-color="#fff"/></radialGradient>'
+            f'<mask id="hubmask"><rect x="{x}" y="{y}" width="{w}" height="{h}" fill="url(#fade)"/></mask></defs>'
+            f'<g clip-path="url(#hubclip)"><path d="{"".join(d)}" stroke="{c["grid"]}" stroke-width="1" mask="url(#hubmask)"/></g>')
+
+
+def hub(c, x, y, w, h):
+    cx = x + w / 2
+    o = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="16" fill="{c["hub"]}"/>', iso_grid(c, x, y, w, h),
+         f'<defs><linearGradient id="brand" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="{c["brand"][0]}"/>'
+         f'<stop offset="1" stop-color="{c["brand"][1]}"/></linearGradient></defs>']
+    n = len(HUB["lines"]); block = 30 + 20 + 38 + (n - 1) * 30  # cap height .. last baseline
+    ty = y + (h - 40 - block) / 2 + 30
+    o.append(text("ARFFORNIA", "brand", 42, cx, ty, "url(#brand)", anchor="middle", tracking=2))
+    ty += 20
+    o.append(f'<rect x="{cx - 16}" y="{ty}" width="32" height="2" fill="{c["brand"][0]}"/>')
+    for i, ln in enumerate(HUB["lines"]):
+        o.append(text(ln, "semi", 19, cx, ty + 38 + i * 30, c["hub_ink"], anchor="middle"))
+    o.append(text(HUB["foot"], "mono", 13, cx, y + h - 24, c["muted"], anchor="middle"))
+    return "".join(o)
+
+
+def maas(c, x, y, w):
+    h = 200; o = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="16" fill="{c["base"]}"/>']
+    lx = x + 36
+    o.append(text(MAAS["kicker"], "display", 56, lx, y + 76, c["ember"]))
+    o.append(text(MAAS["name"], "display", 24, lx, y + 112, c["on_base"]))
+    o.append(text(MAAS["pitch"], "text", 18, lx, y + 140, c["on_base_muted"]))
+    o.append(text(MAAS["repo"], "mono", REPO, lx, y + h - 28, c["ember"]))
+    px = x + w / 2 + 40; pw = x + w - 36 - px
+    n = len(MAAS["points"]); rh = (h - 48) / n
+    for i, (pt, planned) in enumerate(MAAS["points"]):
+        ry = y + 24 + i * rh
+        if i: o.append(f'<path d="M{px} {ry:.1f}h{pw:.1f}" stroke="{c["base_line"]}"/>')
+        by = ry + rh / 2
+        o.append(f'<rect x="{px + 1}" y="{by - 6:.1f}" width="10" height="10" rx="1" '
+                 + (f'fill="none" stroke="{c["ember"]}" stroke-width="2"/>' if planned else f'fill="{c["ember"]}"/>'))
+        o.append(text(pt, "medium", 18, px + 26, by + 5, c["on_base"]))
+        if planned:
+            o.append(text("PLANNED", "mono", 12, px + pw, by + 4, c["on_base_muted"], anchor="end", tracking=1.6))
+    return "".join(o), h
 
 
 def build(theme):
-    c = THEMES[theme]
-    o = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {S} {S}" width="{S}" height="{S}" role="img" '
-         f'aria-label="The Arffornia ecosystem: Play, Build and Run, nine capabilities and their building blocks">',
-         f"""<style>
-@keyframes turn {{ to {{ transform: rotate(360deg) }} }}
-@keyframes glow {{ 0%,100% {{ opacity: .55 }} 50% {{ opacity: 1 }} }}
-.cog {{ transform-origin: {C}px {C}px; animation: turn 120s linear infinite }}
-.pulse {{ animation: glow 3.2s ease-in-out infinite }}
-@media (prefers-reduced-motion: reduce) {{ * {{ animation: none !important }} }}
-</style>""",
-         f'<rect width="{S}" height="{S}" rx="28" fill="{c["bg"]}"/>']
-    # cog teeth
-    teeth = []
-    for i in range(72):
-        a = i * 5
-        teeth.append(sector(R_COG - 16, R_COG + 8, a - 1.3, a + 1.3))
-    o.append(f'<g class="cog"><circle cx="{C}" cy="{C}" r="{R_COG - 14}" fill="{c["cog"]}"/><path d="{"".join(teeth)}" fill="{c["cog"]}"/></g>')
-    o.append(f'<circle cx="{C}" cy="{C}" r="{R_ITEM}" fill="{c["ring"]}"/>')
-
-    n_cap = sum(len(caps) for _, _, caps in ECOSYSTEM); span = 360 / n_cap
-    start = -span * 1.5  # centre the PLAY core on top
-    k = 0
-    for ci, (core, sub, caps) in enumerate(ECOSYSTEM):
-        col, tint = c["cores"][ci], c["tints"][ci]
-        a_core1, a_core2 = start + k * span, start + (k + len(caps)) * span
-        o.append(f'<path d="{sector(R_HUB + 6, R_CORE, a_core1, a_core2, 0.8)}" fill="{col}"/>')
-        mid = (a_core1 + a_core2) / 2; x, y = pol((R_HUB + R_CORE) / 2 + 12, mid)
-        o.append(centered(core, "bold", 30, x, y + 4, "#ffffff", tracking=3))
-        o.append(centered(sub, "medium", 13, x, y + 26, "#ffffff", extra='fill-opacity=".85"'))
-        for name, ic, items in caps:
-            a1, a2 = start + k * span, start + (k + 1) * span; am = (a1 + a2) / 2
-            o.append(f'<path d="{sector(R_CORE + 6, R_CAP, a1, a2, 0.6)}" fill="{tint}"/>')
-            o.append(f'<path d="{sector(R_CAP - 5, R_CAP, a1, a2, 0.6)}" fill="{col}" class="pulse" style="animation-delay:{k * .35:.2f}s"/>')
-            ix, iy = pol((R_CORE + R_CAP) / 2 + 10, am)
-            o.append(icon(ic, ix, iy - 16, col, 1.15))
-            o.append(centered(name, "bold", 17, ix, iy + 22, c["ink"]))
-            o.append(f'<path d="{sector(R_CAP + 6, R_ITEM - 6, a1, a2, 0.5)}" fill="{c["panel"]}" stroke="{c["edge"]}"/>')
-            # blocks stacked around the outer segment's centre
-            rx, ry = pol((R_CAP + R_ITEM) / 2 + 4, am)
-            lh = 25; top = ry - (len(items) - 1) * lh / 2
-            for j, it in enumerate(items):
-                planned = it.endswith("*"); label = it.rstrip("*")
-                yy = top + j * lh + 6
-                o.append(centered(label, "medium", 16, rx, yy, c["planned"] if planned else c["ink"]))
-                if planned:
-                    w = text_width(label, "medium", 16)
-                    o.append(f'<line x1="{rx - w / 2:.1f}" y1="{yy + 5:.1f}" x2="{rx + w / 2:.1f}" y2="{yy + 5:.1f}" stroke="{c["planned"]}" stroke-dasharray="3 3"/>')
-            k += 1
-    # hub
-    o.append(f'<circle cx="{C}" cy="{C}" r="{R_HUB}" fill="{c["hub"]}" stroke="{c["edge"]}" stroke-width="2"/>')
-    o.append(centered("ARFFORNIA", "bold", 22, C, C - 2, c["hub_ink"], tracking=2))
-    o.append(centered("ecosystem", "medium", 13, C, C + 20, c["muted"], tracking=1.5))
-    # legend
-    o.append(centered("dashed = planned", "medium", 13, C, S - 18, c["muted"], tracking=.5))
-    o.append("</svg>")
-    return "\n".join(o)
+    c = THEMES[theme]; o = []; _defs.clear()
+    by_slot = {s: [p for p in PROJECTS if GROUPS[p[0]]["slot"] == s] for s in ("top", "left", "right")}
+    key_of = {s: next(k for k, g in GROUPS.items() if g["slot"] == s) for s in ("top", "left", "right")}
+    y = M + 22
+    # top row: cards share the full width
+    top = by_slot["top"]; tw = (W - 2 * M - (len(top) - 1) * G) / len(top)
+    o.append(group_label(c, key_of["top"], M, y)); y += 20
+    th = max(card_height(p, tw) for p in top)
+    for i, p in enumerate(top):
+        o.append(card(c, p, M + i * (tw + G), y, tw, th))
+    y += th + 44
+    # middle: left column, hub, right column
+    o.append(group_label(c, key_of["left"], M, y)); o.append(group_label(c, key_of["right"], M + 2 * (COL + G), y))
+    y += 20
+    ch = max(card_height(p, COL) for p in by_slot["left"] + by_slot["right"])
+    stack = max(len(by_slot["left"]), len(by_slot["right"])) * (ch + 16) - 16
+    for col, slot in ((0, "left"), (2, "right")):
+        for j, p in enumerate(by_slot[slot]):
+            o.append(card(c, p, M + col * (COL + G), y + j * (ch + 16), COL, ch))
+    o.append(hub(c, M + COL + G, y - 32, COL, stack + 32))  # hub reaches up to the label line
+    y += stack + 20
+    band, bh = maas(c, M, y, W - 2 * M)
+    o.append(band); y += bh + 20
+    o.append(text(f"Repositories on github.com/{ORG} unless an owner is shown", "text", 14, M, y + 8, c["muted"]))
+    H = int(y + 8 + M - 8)
+    head = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" '
+            f'aria-label="The Arffornia ecosystem: Play (launcher, website, sign-in theme), Game (mod, provisioning, proxy) '
+            f'and Toolkit (Nexus libraries, docs and Noodle, agent kit), all running on MaaS, Minecraft as a Service.">'
+            f'<rect width="{W}" height="{H}" rx="20" fill="{c["canvas"]}"/>')
+    return head + glyph_defs() + "".join(o) + "</svg>"
 
 
 if __name__ == "__main__":
