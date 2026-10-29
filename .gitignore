@@ -1,3 +1,5 @@
 site/
 *.drawio.bkp
 .cache/
+.direnv/
+result

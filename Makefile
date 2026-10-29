@@ -3,7 +3,8 @@ SYSTEM  := architecture/arffornia
 VIEWS   := $(basename $(notdir $(wildcard $(SYSTEM)/views/*.yaml)))
 OUT     := docs/assets/diagrams
 INFRA   ?= ../infra
-DRAWIO  ?= drawio
+# draw.io desktop CLI: `drawio` on Linux; the Homebrew cask (macOS) installs only the app bundle.
+DRAWIO  ?= $(shell command -v drawio 2>/dev/null || echo /Applications/draw.io.app/Contents/MacOS/draw.io)
 ICONS   := -icons .noodle/icons
 
 .PHONY: check build serve lint-diagrams diagrams discover clean

@@ -4,6 +4,20 @@ on:
   push: {branches: [main]}
 permissions: {contents: read}
 jobs:
+  # Same check on an Apple Silicon runner (bash 3.2 and BSD tools in the Makefile).
+  check-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.13"}
+      - uses: actions/setup-go@v6
+        with: {go-version: stable}
+      - name: Install tools
+        run: |
+          pip install -r requirements.txt
+          go install github.com/TheGostsniperfr/Noodle/cmd/noodle@main
+      - run: make check
   check:
     runs-on: ubuntu-latest
     steps:
