@@ -67,6 +67,7 @@ nav:
       - Infrastructure: components/infra.md
   - Contributing:
       - contributing/index.md
+      - Development setup (Linux, macOS): contributing/dev-setup.md
       - Workflow: contributing/workflow.md
       - Standards: contributing/standards.md
       - Working with AI agents: contributing/ai-agents.md
