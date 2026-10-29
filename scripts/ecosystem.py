@@ -28,7 +28,7 @@ GROUPS = {
     "tools": dict(label="Toolkit", tag="how it's built", slot="right"),
 }
 
-# (group, title, repo slugs, one short line; **bold** marks a figure). Toolkit lines are not shown.
+# (group, title, repo slugs, one short line; **bold** marks a figure)
 PROJECTS = [
     ("play", "Launcher", ["Arffornia_Launcher_V.5.2"], "Sign in, install, play."),
     ("play", "Website", ["Arffornia_Website"], "Accounts, shop, votes, public API"),
@@ -44,7 +44,7 @@ PROJECTS = [
 HUB = dict(line="A Satisfactory-style modded server.")
 
 # MaaS: the platform the whole network runs on. (benefit, planned)
-MAAS = dict(kicker="RUNS ON", word="MaaS", name="Minecraft as a Service", repo="TheGostsniperfr/infra",
+MAAS = dict(word="MaaS", name="Minecraft as a Service", repo="TheGostsniperfr/infra",
             pitch="Provision a Minecraft server in a few clicks.",
             points=[("NeoForge 1.21.1 servers, on demand", False), ("The whole network declared in Git", False),
                     ("A preview server for every change", True)])
@@ -230,33 +230,51 @@ def card(c, p, x, y, w, h, strong=False):
 
 
 def compact_panel(c, items, x, y, w, h):
-    """Toolkit: no cards, title + slugs only, on a recessed panel."""
+    """Toolkit: no cards, on a recessed panel; title, repos and one muted line per item."""
     o = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="10" fill="{c["panel"]}"/>']
     rh = h / len(items)
-    for i, (key, title, slugs, _) in enumerate(items):
+    for i, (key, title, slugs, line) in enumerate(items):
         ry = y + i * rh
         if i: o.append(f'<path d="M{x + PAD} {ry:.1f}h{w - 2 * PAD}" stroke="{c["panel_line"]}"/>')
-        block = 28 + 28 * len(slugs)
-        by = ry + (rh - block) / 2 + 22
+        n = len(rich_lines(line, BODY - 2, w - 2 * PAD)[0])
+        block = 20 + 28 * len(slugs) + 12 + 26 * n
+        by = ry + (rh - block) / 2 + 20
         o.append(text(title, "semi", fit(title, "semi", 26, w - 2 * PAD), x + PAD, by, c["body"]))
         for j, sl in enumerate(slugs):
-            o.append(text(sl, "mono", fit(sl, "mono", SLUG, w - 2 * PAD), x + PAD, by + 30 + j * 26, c["accent_txt"][key]))
+            o.append(text(sl, "mono", fit(sl, "mono", SLUG, w - 2 * PAD), x + PAD, by + 28 + j * 26, c["accent_txt"][key]))
+        ly = by + 28 * len(slugs) + 34
+        lines, sp = rich_lines(line, BODY - 2, w - 2 * PAD)
+        for k, ln in enumerate(lines):
+            o.append(text(" ".join(t[0] for t in ln), "text", BODY - 2, x + PAD, ly + k * 26, c["muted"]))
     return "".join(o)
 
 
-def iso_pt(x, y, z, ox, oy, k):
-    return (ox + (x - y) * k * .8660254, oy + (x + y) * k * .5 - z * k)
+def crafter(theme, cx, top, height):
+    """The Arffornia logo: the crafter machine from the banner, same geometry and colours,
+    reused from profile_banner.py and scaled into place. Its window glows and its vents blink
+    like on the banner (CSS, stopped under prefers-reduced-motion)."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import profile_banner as pb
+    b = pb.THEMES[theme]
+    parts = [pb.box(-1.2, -.6, 0, 3.4, 3.2, 2.6, b["m_top"], b["m_left"], b["m_right"]),
+             pb.box(-.4, .2, 2.6, 1.8, 1.6, .5, b["m_top"], b["m_left"], b["m_right"])]
+    hx, hy = pb.iso(.5, 2.6, 1.4)
+    parts.append(f'<circle cx="{hx:.1f}" cy="{hy:.1f}" r="70" fill="url(#crafthalo)" class="glow"/>')
+    parts.append(pb.poly([pb.iso(-.6, 2.6, .8), pb.iso(1.6, 2.6, .8), pb.iso(1.6, 2.6, 2.0), pb.iso(-.6, 2.6, 2.0)], b["glow"], 'class="glow"'))
+    for k in range(3):
+        vx, vy = pb.iso(2.2, -.2 + k * .7, 1.8)
+        parts.append(f'<rect x="{vx - 3:.1f}" y="{vy:.1f}" width="6" height="14" rx="2" fill="{b["teal"]}" class="beacon" style="animation-delay:{k * .4:.1f}s"/>')
+    pts = [pb.iso(a, bb, z) for a in (-1.2, 2.2) for bb in (-.6, 2.6) for z in (0, 3.1)]
+    x0, x1 = min(p[0] for p in pts), max(p[0] for p in pts)
+    y0, y1 = min(p[1] for p in pts), max(p[1] for p in pts)
+    sc = height / (y1 - y0)
+    tx, ty = cx - (x0 + x1) / 2 * sc, top - y0 * sc
+    return (f'<defs><radialGradient id="crafthalo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="{b["glow"]}" stop-opacity=".55"/>'
+            f'<stop offset="1" stop-color="{b["glow"]}" stop-opacity="0"/></radialGradient></defs>'
+            f'<g transform="translate({tx:.1f} {ty:.1f}) scale({sc:.4f})">{"".join(parts)}</g>')
 
 
-def iso_box(x, y, z, top, left, right, ox, oy, k):
-    p = lambda a, b, cc: iso_pt(x + a, y + b, z + cc, ox, oy, k)
-    poly = lambda pts, f: f'<polygon points="{" ".join(f"{a:.1f},{b:.1f}" for a, b in pts)}" fill="{f}"/>'
-    return (poly([p(0, 1, 0), p(1, 1, 0), p(1, 1, 1), p(0, 1, 1)], left)
-            + poly([p(1, 0, 0), p(1, 1, 0), p(1, 1, 1), p(1, 0, 1)], right)
-            + poly([p(0, 0, 1), p(1, 0, 1), p(1, 1, 1), p(0, 1, 1)], top))
-
-
-def hub(c, x, y, w, h):
+def hub(c, theme, x, y, w, h):
     cx = x + w / 2; o = []
     # the banner's isometric floor grid, fading out behind the wordmark
     d = []; step = 34; t = 0.57735
@@ -273,14 +291,11 @@ def hub(c, x, y, w, h):
     o.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="16" fill="{c["hub"]}" stroke="{c["hub_line"]}"/>')
     o.append(f'<g clip-path="url(#hubclip)"><path d="{"".join(d)}" stroke="{c["grid"]}" stroke-opacity="{c["grid_o"]}" '
              f'stroke-width="1" fill="none" mask="url(#hubmask)"/></g>')
-    # content block: cubes (90) + 30 + wordmark cap (46) + 22 + rule + 40 + line
-    block = 90 + 30 + 46 + 22 + 40
-    top = y + (h - block) / 2 + 28  # optical centre: the cubes rise above their origin
-    k = 26; ox, oy = cx, top + 18
-    cubes = [(0, 0, 0, c["cube"]), (1, 0, 0, c["block"]), (0, 1, 0, c["block"]), (0, 0, 1, c["cube"])]
-    for bx, byy, bz, col in sorted(cubes, key=lambda b: (b[2], b[0] + b[1])):
-        o.append(iso_box(bx - 1, byy - 1, bz, *col, ox, oy, k))
-    wy = top + 90 + 30 + 46
+    # content block: crafter logo (150) + 30 + wordmark cap (46) + 22 + rule + 40 + line
+    block = 150 + 30 + 46 + 22 + 40
+    top = y + (h - block) / 2
+    o.append(crafter(theme, cx, top, 150))
+    wy = top + 150 + 30 + 46
     o.append(text("ARFFORNIA", "brand", fit("ARFFORNIA", "brand", 64, w - 40), cx, wy, "url(#brand)", anchor="middle", tracking=1.5))
     o.append(f'<rect x="{cx - 16}" y="{wy + 20}" width="32" height="2" fill="{c["brand"][0]}"/>')
     o.append(text(HUB["line"], "medium", fit(HUB["line"], "medium", BODY, w - 40), cx, wy + 22 + 40, c["hub_ink"], anchor="middle"))
@@ -288,18 +303,17 @@ def hub(c, x, y, w, h):
 
 
 def maas(c, x, y, w):
-    h, e = 236, 10  # height, isometric edge depth
+    h, e = 214, 10  # height, isometric edge depth
     o = [f'<rect x="{x}" y="{y + e}" width="{w - e}" height="{h - e}" fill="{c["base"]}"/>',
          f'<polygon points="{x},{y + e} {x + e},{y} {x + w},{y} {x + w - e},{y + e}" fill="{c["lip"]}"/>',
          f'<polygon points="{x + w - e},{y + e} {x + w},{y} {x + w},{y + h - e} {x + w - e},{y + h}" fill="{c["lip"]}"/>']
     if c["lip_edge"] != "none":
         o.append(f'<path d="M{x} {y + e}h{w - e}" stroke="{c["lip_edge"]}" stroke-opacity=".7"/>')
     lx = x + 36
-    o.append(text(MAAS["kicker"], "monomed", LABEL, lx, y + 50, c["on_base_muted"], tracking=LABEL * .18))
-    o.append(text(MAAS["word"], "display", 56, lx, y + 108, c["ember"]))
+    o.append(text(MAAS["word"], "display", 56, lx, y + 84, c["ember"]))
     ww = width(MAAS["word"], "display", 56)
-    o.append(text(MAAS["name"], "display", 26, lx + ww + 18, y + 108, c["on_base"]))
-    o.append(text(MAAS["pitch"], "text", BODY, lx, y + 150, c["on_base_muted"]))
+    o.append(text(MAAS["name"], "display", 26, lx + ww + 18, y + 84, c["on_base"]))
+    o.append(text(MAAS["pitch"], "text", BODY, lx, y + 126, c["on_base_muted"]))
     o.append(text(MAAS["repo"], "mono", SLUG, lx, y + h - 34, c["ember"]))
     px = x + w * .56; pw = x + w - e - 36 - px
     n = len(MAAS["points"]); top = y + e + 22; rh = (h - e - 44) / n
@@ -350,7 +364,7 @@ def build(theme):
     o.append(compact_panel(c, slot["right"], cols[2][0], y, SIDE, stack))
     spine = 72  # room under the hub for the "runs on" connector
     hub_h = stack + 8 - spine
-    o.append(hub(c, hub_x, y, HUBW, hub_h))
+    o.append(hub(c, theme, hub_x, y, HUBW, hub_h))
 
     # connectors: each group plugs into the hub, the hub plugs into MaaS
     mid = y + (len(slot["left"]) // 2) * (ch + 16) + ch / 2
@@ -374,7 +388,9 @@ def build(theme):
             f'aria-label="The Arffornia ecosystem. Play: launcher, website, sign-in pages. Game: mod, provisioning, votes. '
             f'Toolkit: Nexus libraries, docs and Noodle, agent kit. All of it runs on MaaS, Minecraft as a Service.">'
             f'<style>@keyframes belt {{ to {{ stroke-dashoffset: -24 }} }} .belt {{ animation: belt 1.6s linear infinite }} '
-            f'@media (prefers-reduced-motion: reduce) {{ .belt {{ animation: none }} }}</style>'
+            f'@keyframes pulse {{ 0%,100% {{ opacity: .45 }} 50% {{ opacity: 1 }} }} .glow {{ animation: pulse 2.4s ease-in-out infinite }} '
+            f'@keyframes blink {{ 0%,70%,100% {{ opacity: .2 }} 80% {{ opacity: 1 }} }} .beacon {{ animation: blink 2s linear infinite }} '
+            f'@media (prefers-reduced-motion: reduce) {{ .belt, .glow, .beacon {{ animation: none }} }}</style>'
             f'<rect width="{W}" height="{H}" rx="24" fill="{c["canvas"]}"/>')
     return head + glyph_defs() + "".join(o) + "</svg>"
 
