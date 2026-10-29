@@ -81,5 +81,10 @@ nav:
       - 0006 Recipes as a datapack: decisions/0006-recipes-as-datapack.md
       - 0007 Preview environments: decisions/0007-preview-environments.md
       - Template: decisions/template.md
+  - Research:
+      - specs/research.md
+      - 004 In-game E2E testing: specs/004-in-game-e2e-testing.md
+      - 005 3D model pipeline: specs/005-3d-model-pipeline.md
+      - 006 GUI design system: specs/006-gui-design-system.md
   - Roadmap: roadmap.md
   - Glossary: glossary.md
