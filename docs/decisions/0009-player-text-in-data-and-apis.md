@@ -10,7 +10,7 @@ date: 2026-10-29
 website, launcher and mod now pass it (Website #101, Launcher #67, Mods #50). Text that arrives as
 **data** was left out: database rows served by the API (news, shop items, milestones, item names),
 JSON and scripts shipped by Provisioning (shader badges, KubeJS tooltips, Discord presence), and the
-messages in API responses. An audit found 63 such fields or call sites: English or French depending
+messages in API responses. An audit found 40 such fields or call sites (54 audited): English or French depending
 on who typed them, and nothing to switch the language. Two things already work and set the
 direction: Provisioning's `featuredShaders.json` stores `{ "fr": ..., "en": ... }` objects that the launcher
 resolves, and [Arffornia_Website#100](https://github.com/Arffornia/Arffornia_Website/issues/100) recommends JSON columns with `spatie/laravel-translatable` for database
