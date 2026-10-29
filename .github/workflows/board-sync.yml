@@ -1,0 +1,19 @@
+# Keeps the org board "Arffornia Roadmap" in sync with open issues and PRs of every repo.
+# Needs the org secret ADD_TO_PROJECT_PAT (fine-grained token, Organization → Projects: read and write).
+name: board-sync
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency: {group: board-sync, cancel-in-progress: false}
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Sync board
+        env:
+          GH_TOKEN: ${{ secrets.ADD_TO_PROJECT_PAT }}
+        run: python3 scripts/sync_board.py
