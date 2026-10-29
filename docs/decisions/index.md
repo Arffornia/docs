@@ -12,5 +12,6 @@ the rule until a newer ADR supersedes it. Proposed ADRs wait for the maintainer.
 | [0005](0005-docs-as-code.md) | Docs as code: MkDocs site and Noodle diagrams | Proposed |
 | [0006](0006-recipes-as-datapack.md) | Deliver custom recipes as a generated datapack | Proposed |
 | [0007](0007-preview-environments.md) | Per-PR preview environments on the cluster | Proposed |
+| [0009](0009-player-text-in-data-and-apis.md) | Player-visible text in data and APIs | Proposed |
 
 Template: copy [`template.md`](template.md), take the next number, open a PR.
