@@ -81,6 +81,7 @@ nav:
       - 0005 Docs as code: decisions/0005-docs-as-code.md
       - 0006 Recipes as a datapack: decisions/0006-recipes-as-datapack.md
       - 0007 Preview environments: decisions/0007-preview-environments.md
+      - 0010 Open-source licences: decisions/0010-open-source-licences.md
       - 0011 Two identity planes: decisions/0011-two-identity-planes.md
       - 0012 Keep Laravel, outbox events: decisions/0012-keep-laravel-add-outbox-events.md
       - 0013 Modpack lockfile: decisions/0013-modpack-lockfile.md
@@ -92,6 +93,11 @@ nav:
       - 001 Recipes as a datapack: specs/001-recipes-datapack.md
       - 002 Machine framework: specs/002-machine-framework.md
       - 003 Machine tier plan: specs/003-machine-tier-plan.md
+      - 008 Economy and rewards: specs/008-economy-and-rewards.md
+      - 009 Ranks, roles and permissions: specs/009-ranks-roles-permissions.md
+      - 010 Vote sites: specs/010-vote-sites.md
+      - 011 Mod intake: specs/011-mod-intake.md
+      - 012 Legal and compliance: specs/012-legal-compliance.md
       - 013 Arffornia ID: specs/013-arffornia-id.md
       - 014 Modpack lockfile and compatibility: specs/014-modpack-lockfile-and-compatibility.md
       - 015 Launcher Play speed: specs/015-launcher-play-speed.md
