@@ -14,7 +14,8 @@ agents can set labels over REST from any session, while the board needs GraphQL.
   Chantier, Order, Agent and Risk are managed: recomputed on every run (see chantier_lib.py).
 - Optional cleanup, off by default: ARCHIVE_DONE_DAYS=N archives items closed at least N days
   ago; ARCHIVE_LINKED_PRS=1 archives PR items that close an issue or belong to a chantier.
-- Writes chantier WIP counts to $GITHUB_STEP_SUMMARY and warns above WIP_IN_FLIGHT / WIP_REVIEW.
+- Writes the chantier review load to $GITHUB_STEP_SUMMARY; warns only when WIP_IN_FLIGHT /
+  WIP_REVIEW are set (no hard cap by default).
 - DRY_RUN=1 prints the mutations instead of sending them.
 
 Env: GH_TOKEN (fine-grained token with org Projects read/write). Standard library only.
@@ -31,7 +32,8 @@ EXTRA_REPOS = [("TheGostsniperfr/infra", "arffornia")]  # repo, required substri
 BOARD_PRS = os.environ.get("BOARD_PRS", "unlinked")
 ARCHIVE_DONE_DAYS = int(os.environ.get("ARCHIVE_DONE_DAYS", "0") or 0)
 ARCHIVE_LINKED_PRS = os.environ.get("ARCHIVE_LINKED_PRS", "0") == "1"
-WIP = {"In flight": int(os.environ.get("WIP_IN_FLIGHT", "6")), "Awaiting Brian": int(os.environ.get("WIP_REVIEW", "5"))}
+# Soft review load, no hard cap (ADR-0008 amended 2026-10-31). A limit applies only when set.
+WIP = {k: int(v) for k, v in (("In flight", os.environ.get("WIP_IN_FLIGHT", "")), ("Awaiting Brian", os.environ.get("WIP_REVIEW", ""))) if v.strip()}
 DRY_RUN = os.environ.get("DRY_RUN", "0") == "1"
 TOKEN = os.environ.get("GH_TOKEN") or sys.exit("GH_TOKEN is not set (org secret ADD_TO_PROJECT_PAT).")
 AREAS = ["website", "launcher", "mod", "proxy", "provisioning", "libs", "infra", "ai", "docs"]
@@ -350,7 +352,7 @@ def main():
     for c in chantiers:
         counts[lib.chantier_stage(c)] += 1
     report = [f"## {TITLE}", "", f"{project['url']}: {added} added, {updated} field values set, {archived} archived.", "",
-              "| Chantier lane | Count | WIP limit |", "|---|---|---|"]
+              "| Chantier lane | Count | Limit (optional) |", "|---|---|---|"]
     for s in ("In flight", "Awaiting Brian", "Merging"):
         lim = WIP.get(s)
         over = lim is not None and counts[s] > lim

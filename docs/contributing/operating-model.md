@@ -18,16 +18,20 @@ is to review *intent and risk* per unit of change, not every line
 ## Principles
 
 1. **The unit of human attention is the chantier**, not the issue or the PR.
-2. **Brian's stack is short and ordered.** He unstacks it from the top. At most 5 chantiers wait
-   for him; agents stop opening new ones above that.
+2. **Brian's stack is ordered, not capped.** He unstacks it from the top, in evening and weekend
+   batches, so there is no hard limit on what waits or what is in flight. The stack shows a soft
+   **review load** instead (cards waiting, estimated minutes); agents group small chantiers when
+   it grows, and say so in the weekly brief.
 3. **Labels are the source of truth; the board is a projection.** Agents can set labels over
    REST from any session. A scheduled job recomputes the board fields.
-4. **Agents never merge on their own.** An orchestrator merges a chantier only after Brian
-   added `chantier: approved`, with merge commits, in the listed order.
+4. **Agents open their PRs; they merge only approved chantiers.** An orchestrator merges a
+   chantier only after Brian added `chantier: approved`, with merge commits, in the listed order.
 5. **Every decision comes with a recommended default.** Brian can approve all defaults at once.
 6. **Evidence over prose.** A chantier says what was run, what passed and what was *not* checked.
 7. **Small board.** PRs live inside chantiers, not as rows. Finished items are archived.
-8. **Ideas do not pile up.** Proposals wait in a separate inbox and expire if nobody picks them.
+8. **Ideas are never lost.** Proposals wait in a separate inbox. After 30 days without activity
+   they count as *dormant*: the weekly brief resurfaces them, nothing closes them. Brian may be
+   away for months; his proposals are still there when he comes back.
 
 ## The units
 
@@ -47,8 +51,8 @@ hardening pass) and can be reviewed in about 10 minutes from its page.
 ```mermaid
 flowchart LR
   IN[Inbox<br/>proposals, needs-decision, untriaged] -->|Brian or triage agent| Q[Agent queue<br/>agent-ready, sized]
-  Q -->|agent picks, WIP ≤ 6| F[In flight<br/>PRs open]
-  F -->|all green + summary page<br/>label chantier: review| S[Awaiting Brian<br/>Brian's stack, ≤ 5]
+  Q -->|agent picks| F[In flight<br/>PRs open]
+  F -->|all green + summary page<br/>label chantier: review| S[Awaiting Brian<br/>Brian's stack, soft review load]
   S -->|chantier: changes| F
   S -->|chantier: approved| M[Merging<br/>orchestrator]
   M --> D[Done<br/>archived after 14 days]
@@ -56,7 +60,7 @@ flowchart LR
 
 | Lane | An item is here when | Leaves when |
 |---|---|---|
-| Inbox | `proposal` or `needs-decision`, or no triage label | Brian promotes it (`agent-ready`), answers it, or it expires |
+| Inbox | `proposal` or `needs-decision`, or no triage label | Brian promotes it (`agent-ready`), answers it, or closes it himself (never automatically) |
 | Agent queue | `agent-ready` and no open PR closes it | a PR with `Closes #n` is opened |
 | In flight | an open PR exists, or its chantier has no state label or `chantier: changes` | the chantier gets `chantier: review` |
 | Awaiting Brian | its chantier has `chantier: review` | Brian adds `chantier: approved` or `chantier: changes` |
@@ -115,8 +119,8 @@ Creating a view by hand, on <https://github.com/orgs/Arffornia/projects/3>:
 
 Two settings only exist in the UI:
 
-- **WIP limits on the board.** In the Pipeline view, open the **⋯** menu of the *In flight*
-  column → **Set limit** → 6; *Awaiting Brian* → 5. GitHub shows the count against the limit.
+- **Column limits (optional, off by default).** GitHub can show a count against a limit on a
+  board column (**⋯** → **Set limit**). We do not set one: Brian reviews in batches.
 - **Auto-archive.** Project **⋯** menu (top right) → **Workflows** → **Auto-archive items** →
   **Edit** → filter `is:closed updated:<@today-14d` → **Save and turn on**. This replaces
   `ARCHIVE_DONE_DAYS` if you prefer GitHub to do it.
@@ -124,8 +128,8 @@ Two settings only exist in the UI:
 ## How an agent works
 
 1. **Pick.** Take the top item of *Agent queue* in your area, by priority. Before starting,
-   run `python3 scripts/chantiers.py --wip`: if *In flight* is at its limit, finish or group
-   existing work instead.
+   run `python3 scripts/chantiers.py --wip` to see the review load; when many small chantiers
+   wait, group related work into one chantier instead of opening another.
 2. **Build.** One branch and one PR per issue, `Closes #n` in the body, `make check` green.
    Stack PRs only when one really needs the other.
 3. **Self-review at the end of the task**, in the agent's own session (a second, read-only
@@ -187,8 +191,26 @@ python3 scripts/chantiers.py --merge-plan 12 --execute  # merges, comments, clos
 - PRs are not added as rows when they close an issue or belong to a chantier (`BOARD_PRS=unlinked`).
 - Done items are archived after 14 days (`ARCHIVE_DONE_DAYS`, or the built-in workflow above).
 - `needs-decision` issues are grouped into decision chantiers rather than left alone.
-- Proposals not promoted within 30 days are closed as *not planned* with a comment; they can be
-  reopened. There is no backlog grooming ([Shape Up](https://basecamp.com/shapeup/2.2-chapter-08)).
+- Proposals are never closed automatically. One with no activity for 30 days is *dormant*: the
+  weekly brief lists it under "Dormant proposals resurfaced" so it comes back to Brian's
+  attention; only Brian closes a proposal.
+
+## Agent task queue: GitHub issues, with Beads as an option
+
+Brian asked whether [Beads](https://github.com/steveyegge/beads) (an issue tracker built for
+coding agents) should replace or complement the board. Evaluated 2026-10-31:
+- What it is: `bd`, MIT, about 28k stars. Issues live in a Dolt database (a versioned SQL
+  database) inside `.beads/`, synced through a git ref. `bd ready` lists work with no open
+  blocker, `--claim` takes an item atomically, dependencies are first-class, agents can message
+  each other. It has **no GitHub Issues sync**.
+- Verdict: **complement, not replace.** GitHub issues stay the shared record: Brian, contributors
+  and PRs (`Closes #n`) use them, chantiers link them, and the board projects them. Beads would
+  add a second source of truth for the same work.
+- Where it fits: as an agent's scratch queue *inside* one large chantier when several agents work
+  on it in parallel (claims, blockers, hand-offs), kept in the private ops repo and summarised
+  back into the chantier issue. Today GitHub sub-issues and "blocked by" links cover our size.
+- Default: do not adopt now; trial it on the first chantier that runs three or more agents in
+  parallel.
 
 ## Sources
 

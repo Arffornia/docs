@@ -21,8 +21,7 @@ jobs:
       BOARD_PRS: unlinked          # all | unlinked | none
       ARCHIVE_DONE_DAYS: "0"       # set to 14 once Brian approves the cleanup
       ARCHIVE_LINKED_PRS: "0"      # set to 1 once Brian approves the cleanup
-      WIP_IN_FLIGHT: "6"
-      WIP_REVIEW: "5"
+      # No hard WIP cap (ADR-0008, amended): set WIP_IN_FLIGHT / WIP_REVIEW only to get warnings.
       DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
     steps:
       - uses: actions/checkout@v5

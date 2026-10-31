@@ -123,7 +123,9 @@ class Cli(unittest.TestCase):
         self.assertIn("https://claude.ai/artifact/EXAMPLE", out)
 
     def test_wip_and_plan(self):
-        self.assertIn("Awaiting Brian  1 / 5", self.run_cli("--wip"))
+        out = self.run_cli("--wip")
+        self.assertIn("Awaiting Brian  1", out)
+        self.assertNotIn("/ 5", out)   # no hard cap by default
         self.assertIn("gh pr merge https://github.com/Arffornia/Nexus_Java/pull/7 --merge", self.run_cli("--merge-plan", "5"))
 
 

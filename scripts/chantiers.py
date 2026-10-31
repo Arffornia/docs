@@ -7,7 +7,7 @@ Auth: GH_TOKEN / GITHUB_TOKEN if set, otherwise the `gh` CLI.
   python3 scripts/chantiers.py                  # Brian's stack, in unstacking order (Markdown)
   python3 scripts/chantiers.py --all            # every open chantier, grouped by stage
   python3 scripts/chantiers.py --json           # same data as JSON (for pages and agents)
-  python3 scripts/chantiers.py --wip            # counts per stage against the WIP limits
+  python3 scripts/chantiers.py --wip            # review load per stage (limits only if WIP_* are set)
   python3 scripts/chantiers.py --merge-plan 12  # dry run: ordered merge steps of chantier #12
   python3 scripts/chantiers.py --merge-plan 12 --execute   # orchestrator only, after approval
 
@@ -21,7 +21,8 @@ import chantier_lib as lib  # noqa: E402
 
 REPO = os.environ.get("CHANTIER_REPO", "Arffornia/docs")
 APPROVERS = set(os.environ.get("APPROVERS", "TheGostsniperfr").split(","))
-WIP = {"In flight": int(os.environ.get("WIP_IN_FLIGHT", "6")), "Awaiting Brian": int(os.environ.get("WIP_REVIEW", "5"))}
+# Soft review load, no hard cap (ADR-0008 amended 2026-10-31). A limit applies only when set.
+WIP = {k: int(v) for k, v in (("In flight", os.environ.get("WIP_IN_FLIGHT", "")), ("Awaiting Brian", os.environ.get("WIP_REVIEW", ""))) if v.strip()}
 TOKEN = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
 
 

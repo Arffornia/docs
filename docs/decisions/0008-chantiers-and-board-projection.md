@@ -30,11 +30,14 @@ supersedes: ~      # amends 0004 (board layout and merge rule)
 - The board is recomputed from labels and links by `scripts/sync_board.py`: fields Lane,
   Decision, Chantier, Order, Agent, Risk; views Brian's stack, Pipeline, Agent queue, In flight,
   Merging, Inbox. PRs that close an issue or belong to a chantier are not added as rows.
-- WIP limits: 6 chantiers in flight, 5 awaiting review. Agents check them before starting.
+- No hard WIP limit (amended 2026-10-31: the maintainer reviews in evening and weekend
+  batches). `chantiers.py --wip` and the board sync report a soft review load; limits apply
+  only if `WIP_IN_FLIGHT` / `WIP_REVIEW` are set.
 - After approval by the maintainer, an orchestrator merges the PRs in order with merge commits
   (`scripts/chantiers.py --merge-plan N --execute`), deleting stacked base branches in the
   repos where GitHub does not, then closes the chantier. Agents never merge on their own.
-- Proposals stay in the Inbox lane and expire after 30 days without promotion.
+- Proposals stay in the Inbox lane and never expire (amended 2026-10-31); after 30 days without
+  activity they are dormant and the weekly brief resurfaces them.
 
 ## Consequences
 - The maintainer's queue is one ordered list of pages; one decision per chantier, defaults

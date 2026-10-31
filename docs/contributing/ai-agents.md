@@ -5,14 +5,23 @@ maintainer. The same rules apply to people and agents; agents just follow them m
 
 ## The loop
 
-1. The maintainer writes or approves an issue and labels it `agent-ready`.
-2. An agent reads the repo's `AGENTS.md`, the issue and the relevant ADRs.
-3. It branches, implements, adds tests, runs `make check`, and opens a pull request that says
-   how it was tested and what a human should try.
-4. When the PRs of one outcome are green, it opens a **chantier** with a summary page and the
-   decisions to take ([operating model](operating-model.md)).
-5. The maintainer validates the chantier; an orchestrator merges it in order. Agents never
-   merge on their own.
+The maintainer's workflow (adopted 2026-10-31; generic version in
+[agent-playbook `runbook/WORKFLOW.md`](https://github.com/TheGostsniperfr/agent-playbook/blob/main/runbook/WORKFLOW.md)):
+
+1. **Agents propose chantiers** (or the maintainer writes an issue and labels it `agent-ready`).
+2. **Agents write the spec** for a new chantier: a spec or research page plus decisions, each
+   with a recommended default and a plain-words "why". The maintainer validates or challenges it.
+   Only work the maintainer asked for explicitly, or clear-cut fixes, skip this step.
+3. **Agents implement and open the PRs themselves**: branch, tests, `make check`, then a pull
+   request that says how it was tested and what a human should try.
+4. **Agents run the end-of-task review** in their own session (no AI review in CI).
+5. **Anything that needs a human goes to the review stack**: decisions, high-risk points,
+   manual tests with a guide. Reports stay high level; evidence stays in the PRs.
+6. **The maintainer validates the chantier** ([operating model](operating-model.md)).
+7. **Agents merge and deploy** it, in order, through the orchestrator's merge plan. They never
+   merge anything outside an approved chantier.
+
+No paid services: free tiers, open source and self-hosted tools only.
 
 ## What agents may and may not do
 
