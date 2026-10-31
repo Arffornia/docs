@@ -1,0 +1,37 @@
+name: flake
+# Enters every dev shell of flake.nix on each supported system (x86_64-linux, aarch64-linux,
+# aarch64-darwin), so a package missing on one platform fails here, not on a contributor's machine.
+on:
+  pull_request:
+    paths: [flake.nix, flake.lock, .github/workflows/flake.yml]
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency:
+  group: flake-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  devshells:
+    name: devshells (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: cachix/install-nix-action@v31
+      - name: Enter each shell
+        run: |
+          set -eu
+          for shell in node java php docs infra; do
+            echo "::group::$shell"
+            nix develop ".#$shell" --command printenv ARFFORNIA_SHELL
+            nix develop ".#$shell" --command make --version
+            echo "::endgroup::"
+          done
+          nix develop .#node --command node --version
+          nix develop .#java --command java -version
+          nix develop .#php --command php -r 'echo PHP_VERSION, " ", implode(",", ["pdo_pgsql" => extension_loaded("pdo_pgsql"), "zip" => extension_loaded("zip")]), PHP_EOL;'
+          nix develop .#docs --command sh -c 'python3 --version && go version && kustomize version && helm version --short'
+          nix develop .#infra --command sh -c 'kubeconform -v && kubectl version --client'

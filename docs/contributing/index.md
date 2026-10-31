@@ -11,7 +11,8 @@ bug reports, fixes, tests, docs, translations.
    that changes behaviour.
 3. Each repo has an `AGENTS.md` with its commands, map and rules. It is written for AI agents
    and works just as well for humans.
-4. Run `make check` before you open a pull request.
+4. Set up your machine: [development setup](dev-setup.md) (Linux, NixOS, macOS on Apple Silicon).
+5. Run `make check` before you open a pull request.
 
 ## Ground rules
 
@@ -20,4 +21,4 @@ bug reports, fixes, tests, docs, translations.
 - No secrets in git. Configuration uses placeholders (`${CFG_*}`) filled at deploy time.
 - Security issues: use **Report a vulnerability** on the repo, never a public issue.
 
-Next: [workflow](workflow.md) · [operating model](operating-model.md) · [standards](standards.md) · [AI agents](ai-agents.md) · [diagrams](diagrams.md) · [translations](i18n.md)
+Next: [dev setup](dev-setup.md) · [workflow](workflow.md) · [operating model](operating-model.md) · [standards](standards.md) · [AI agents](ai-agents.md) · [diagrams](diagrams.md) · [translations](i18n.md)

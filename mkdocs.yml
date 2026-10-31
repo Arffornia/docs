@@ -68,6 +68,7 @@ nav:
       - Infrastructure: components/infra.md
   - Contributing:
       - contributing/index.md
+      - Development setup (Linux, macOS): contributing/dev-setup.md
       - Workflow: contributing/workflow.md
       - Operating model: contributing/operating-model.md
       - Standards: contributing/standards.md

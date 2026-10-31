@@ -15,6 +15,8 @@ make discover INFRA=../infra   # refresh Kubernetes facts for the diagrams
 - Diagrams: `architecture/arffornia/` (Noodle model, views, layouts), exports in
   `docs/assets/diagrams/`.
 - Decisions: `docs/decisions/` (ADRs).
+- `flake.nix`: Nix dev shells for every Arffornia repo (Linux x86_64/arm64, Apple Silicon), e.g.
+  `nix develop github:Arffornia/docs#node`. See `docs/contributing/dev-setup.md`.
 
 Published by `.github/workflows/pages.yml` on every push to `main`
 (enable Pages → Source: GitHub Actions in the repo settings).
