@@ -4,7 +4,7 @@ site_url: https://arffornia.github.io/docs/
 repo_url: https://github.com/Arffornia/docs
 repo_name: Arffornia/docs
 edit_uri: edit/main/docs/
-copyright: Arffornia — maintained by Brian Perret and contributors
+copyright: "© Brian Perret and Arffornia contributors · Text CC BY 4.0, code MIT · NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT."
 
 theme:
   name: material

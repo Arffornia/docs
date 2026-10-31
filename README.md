@@ -18,3 +18,10 @@ make discover INFRA=../infra   # refresh Kubernetes facts for the diagrams
 
 Published by `.github/workflows/pages.yml` on every push to `main`
 (enable Pages → Source: GitHub Actions in the repo settings).
+
+## License
+
+Documentation text and diagrams: [CC BY 4.0](LICENSE-DOCS). Scripts and configuration: [MIT](LICENSE).
+Both: © Brian Perret and Arffornia contributors.
+
+NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.
