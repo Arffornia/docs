@@ -1,0 +1,14 @@
+name: Feature idea
+description: Suggest an improvement or a new feature
+labels: ["proposal"]
+body:
+  - type: textarea
+    id: problem
+    attributes: {label: Problem or opportunity, description: "Who benefits, and what is hard today?"}
+    validations: {required: true}
+  - type: textarea
+    id: idea
+    attributes: {label: Proposed idea}
+  - type: textarea
+    id: alternatives
+    attributes: {label: Alternatives considered}
