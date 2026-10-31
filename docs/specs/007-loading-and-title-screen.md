@@ -261,13 +261,72 @@ the shell wrappers) are in [`007-loading-and-title-screen/harness/`](007-loading
   drop both mods and their configs.
 - No world or server change. Client-only; servers do not need the provider jar.
 
+## Round 2 (2026-10-31): UI directions, the early window, web menus
+
+Brian's feedback on round 1: the 3D machines are what he wanted; the buttons and panels on top
+are not. He wants something modern rather than "gamer", matching the launcher's look (which may
+change later). Round 2 keeps the factory and proposes five UI directions over it.
+
+**The machines are now real models.** The mock machines were extracted into Blockbench files
+(`.bbmodel`) in the proposed `Arffornia/arffornia-assets` repository, which re-renders every
+derived asset (stills, loops, sprite sheets, the GitHub profile's animated SVG, glTF) when a model
+changes. All round 2 images come from that pipeline (three.js, deterministic).
+
+| Direction | Idea | Bold choice |
+|---|---|---|
+| **A · Honeycomb** | The menu is a mosaic of hexagonal tiles that continues the floor grid; the Play tile carries the Space Elevator; loading fills the six tiles clockwise | the hex mosaic Brian liked in an old menu mod |
+| **B · Drafting sheet** | The screen is an engineering drawing: leader lines name each machine, the menu is the drawing's title block; loading is a revision table | engineering-drawing conventions as the UI |
+| **C · Launcher continuity** | Same tokens as today's launcher (Montserrat, plum, orange): a floating dock, a news card, a status chip | zero visual break between launcher and game |
+| **D · Shift board** | No panels: the menu is type (Archivo, wide for actions, narrow for status); the six machines double as the six loading steps | typography only |
+| **E · Model studio** | Daylight: the factory is a scale model, the menu a pinned spec sheet with keyboard hints | the light theme |
+
+| | Title | Loading |
+|---|---|---|
+| A · Honeycomb | ![A title](007-loading-and-title-screen/round2/a-title.webp) | ![A loading](007-loading-and-title-screen/round2/a-loading.webp) |
+| B · Drafting sheet | ![B title](007-loading-and-title-screen/round2/b-title.webp) | ![B loading](007-loading-and-title-screen/round2/b-loading.webp) |
+| C · Launcher continuity | ![C title](007-loading-and-title-screen/round2/c-title.webp) | ![C loading](007-loading-and-title-screen/round2/c-loading.webp) |
+| D · Shift board | ![D title](007-loading-and-title-screen/round2/d-title.webp) | ![D loading](007-loading-and-title-screen/round2/d-loading.webp) |
+| E · Model studio | ![E title](007-loading-and-title-screen/round2/e-title.webp) | ![E loading](007-loading-and-title-screen/round2/e-loading.webp) |
+
+Clips and the machine turntables are in the review gallery linked from the PR. Each direction is a
+single HTML page over the same rendered factory, so it can be iterated in minutes.
+
+**Early window (before Minecraft starts).** Brian remembered Forge 1.7.10's animated anvil and asked
+whether a GIF-like animation is possible there. Tested on 2026-10-31:
+
+- FML 1.21.1's stock early window **already plays a 28-frame sprite strip** (the running fox,
+  `fox_running.png`, 256×128 per frame, one frame per 20 Hz tick). Putting our strip on the
+  classpath under that name made the real FML 4.0.39 window play the Arffornia Constructor press
+  instead, at 20 fps (recorded under Xvfb). Proof only: shipping goes through our own provider.
+- Our own GL 3.2 renderer drawing exactly what the provider would draw (baked backdrop + one
+  sprite quad from a 33-frame sheet + the progress bar): **10 ms per tick on a software renderer**
+  (llvmpipe), budget 50 ms; textures 10.6 MB; load and upload 29 ms. A static branded image costs
+  the same minus the sprite.
+![Our provider frame](007-loading-and-title-screen/round2/early-anim.webp) ![Real FML window with our strip](007-loading-and-title-screen/round2/fml-real-window.webp)
+
+- Conclusion: a 20 fps loop is cheap and safe. Recommendation unchanged on D3 (own provider), with
+  the press loop as the "anvil" homage; a static branded image stays the fallback.
+
+**Web menus (Paladium-style).** MCEF embeds Chromium (LGPL, ~150 MB downloaded on first launch from
+CinemaMod's server, Windows/macOS/Linux x86_64 and arm64); WebGUI (MIT) builds on it and supports
+NeoForge 1.21.1 for HTML/CSS/JS screens and HUDs. TesseraUI (LGPL, NeoForge 1.21.1) takes the
+other route: HTML-like templates and CSS rendered as native widgets, no browser, no JavaScript.
+Recommendation: native screens for the title and loading screens (they must open instantly, and
+the early window cannot use a browser anyway); evaluate TesseraUI for menus and machine GUIs;
+keep MCEF/WebGUI for content-heavy pages only (shop, news), loaded on demand, if ever. How
+Paladium does it was not verified from a public source.
+
+**D5 done:** the DireWolf20/FTB logo and background are replaced in Provisioning (PR linked below).
+
 ## Decisions needed
 
 | # | Question | Options | Recommendation |
 |---|---|---|---|
-| D1 | Loading screen direction | (a) A · Night Shift; (b) B · Maquette; (c) mix | **(a)**: emissive power-on reads best; B's palette fits the launcher and website light theme |
-| D2 | Title screen direction | (a) A · Control Room; (b) B · Maquette Hero | **(a)**: continuity with D1 (a); room for server status, progress and news |
-| D3 | How to take over the early window | (a) own provider jar; (b) keep Drippy + FancyMenu; (c) Simple Custom Early Loading + APNG | **(a)** |
+| D1 | Loading screen look (scene) | (a) A · Night Shift; (b) B · Maquette; (c) mix | **(a)**: emissive power-on reads best; B's palette fits the launcher and website light theme |
+| D1b | UI direction over the scene (round 2) | A Honeycomb; B Drafting sheet; C Launcher continuity; D Shift board; E Model studio; or a mix | **D Shift board** for the title (modern, no panels, the factory stays the hero) with **A Honeycomb** as the alternative if the hex identity wins; loading uses the same direction |
+| D2 | Title screen layout (round 1) | (a) A · Control Room; (b) B · Maquette Hero | superseded by D1b |
+| D3 | How to take over the early window | (a) own provider jar; (b) keep Drippy + FancyMenu; (c) Simple Custom Early Loading + APNG | **(a)**, with the 20 fps press loop (proved, see round 2) |
+| D9 | Web-rendered menus | (a) native screens, TesseraUI for menus/GUIs; (b) MCEF/WebGUI for all menus; (c) MCEF only for content pages | **(a)** |
 | D4 | Launcher splash to cover JVM start | (a) yes, after the Electron upgrade; (b) no | **(a)** |
 | D5 | Third-party art currently shipped in `config/fancymenu/assets` | (a) remove now; (b) keep until replaced | **(a)** |
 | D6 | Which machines appear before their models exist | (a) tiers 0–3 as teasers, mocks replaced as 005 models land; (b) only released machines | **(a)** |
