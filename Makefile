@@ -6,9 +6,15 @@ INFRA   ?= ../infra
 DRAWIO  ?= drawio
 ICONS   := -icons .noodle/icons
 
-.PHONY: check build serve lint-diagrams diagrams discover clean
+.PHONY: check build serve lint-diagrams diagrams discover test-scripts stack clean
 
-check: lint-diagrams build
+check: test-scripts lint-diagrams build
+
+test-scripts:     ## offline tests of the board and chantier scripts (Python 3.9+, stdlib)
+	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_*.py'
+
+stack:            ## print Brian's stack of chantiers (REST; GH_TOKEN or the gh CLI)
+	python3 -B scripts/chantiers.py
 
 build:            ## build the site, failing on broken links or warnings
 	mkdocs build --strict
