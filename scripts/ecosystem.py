@@ -10,7 +10,11 @@ project to PROJECTS (and, if needed, a group to GROUPS) and run
 Text is shaped with HarfBuzz (kerning) and converted to paths with fontTools, because GitHub
 strips external fonts from SVG images. Fonts (OFL, in profile/fonts): Archivo for text,
 JetBrains Mono for repository names, Chakra Petch for the wordmark (same as the banner).
-Requires: pip install fonttools uharfbuzz
+Requires: pip install fonttools uharfbuzz pillow
+
+The logo is the Arffornia crafting table (profile/brand/crafting-table.png, the same file as
+Arffornia_Website/public/images/Crafting_Table.png), embedded as a data URI because GitHub
+blocks external images inside SVGs.
 """
 import os, sys
 import uharfbuzz as hb
@@ -35,7 +39,7 @@ PROJECTS = [
     ("play", "Sign-in", ["keycloak-theme-arffornia"], "Arffornia account pages"),
     ("game", "Mod", ["Arffornia_Mods"], "Milestones, machines and the Space Elevator"),
     ("game", "Provisioning", ["Arffornia_Provisioning"], "**330 mods,** declared once, always current"),
-    ("game", "Votes", ["Arffornia_Proxy"], "Server-list votes, rewarded in game"),
+    ("game", "Proxy", ["Arffornia_Proxy"], "Velocity entry point: routes players to servers, forwards votes"),
     ("tools", "Nexus libraries", ["Nexus_*"], "The launcher's TypeScript libraries"),
     ("tools", "Docs + Noodle", ["docs", "TheGostsniperfr/Noodle"], "Architecture, diagrams as code"),
     ("tools", "Agent Kit", ["agent-kit"], "The AI tooling behind the codebase"),
@@ -249,29 +253,25 @@ def compact_panel(c, items, x, y, w, h):
     return "".join(o)
 
 
-def crafter(theme, cx, top, height):
-    """The Arffornia logo: the crafter machine from the banner, same geometry and colours,
-    reused from profile_banner.py and scaled into place. Its window glows and its vents blink
-    like on the banner (CSS, stopped under prefers-reduced-motion)."""
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    import profile_banner as pb
-    b = pb.THEMES[theme]
-    parts = [pb.box(-1.2, -.6, 0, 3.4, 3.2, 2.6, b["m_top"], b["m_left"], b["m_right"]),
-             pb.box(-.4, .2, 2.6, 1.8, 1.6, .5, b["m_top"], b["m_left"], b["m_right"])]
-    hx, hy = pb.iso(.5, 2.6, 1.4)
-    parts.append(f'<circle cx="{hx:.1f}" cy="{hy:.1f}" r="70" fill="url(#crafthalo)" class="glow"/>')
-    parts.append(pb.poly([pb.iso(-.6, 2.6, .8), pb.iso(1.6, 2.6, .8), pb.iso(1.6, 2.6, 2.0), pb.iso(-.6, 2.6, 2.0)], b["glow"], 'class="glow"'))
-    for k in range(3):
-        vx, vy = pb.iso(2.2, -.2 + k * .7, 1.8)
-        parts.append(f'<rect x="{vx - 3:.1f}" y="{vy:.1f}" width="6" height="14" rx="2" fill="{b["teal"]}" class="beacon" style="animation-delay:{k * .4:.1f}s"/>')
-    pts = [pb.iso(a, bb, z) for a in (-1.2, 2.2) for bb in (-.6, 2.6) for z in (0, 3.1)]
-    x0, x1 = min(p[0] for p in pts), max(p[0] for p in pts)
-    y0, y1 = min(p[1] for p in pts), max(p[1] for p in pts)
-    sc = height / (y1 - y0)
-    tx, ty = cx - (x0 + x1) / 2 * sc, top - y0 * sc
-    return (f'<defs><radialGradient id="crafthalo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="{b["glow"]}" stop-opacity=".55"/>'
-            f'<stop offset="1" stop-color="{b["glow"]}" stop-opacity="0"/></radialGradient></defs>'
-            f'<g transform="translate({tx:.1f} {ty:.1f}) scale({sc:.4f})">{"".join(parts)}</g>')
+LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "profile", "brand", "crafting-table.png")
+
+
+def logo(theme, cx, top, height):
+    """The Arffornia logo: the crafting table from the website (Crafting_Table.png), embedded as a
+    256 px palette PNG (about 9 KB) so it renders inside a GitHub <img>. A soft ember halo behind it
+    breathes slowly (CSS, stopped under prefers-reduced-motion)."""
+    import base64, io
+    from PIL import Image
+    im = Image.open(LOGO).convert("RGBA").resize((256, 256), Image.LANCZOS)
+    buf = io.BytesIO(); im.quantize(128, method=Image.FASTOCTREE).save(buf, "PNG", optimize=True)
+    uri = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+    halo = "#e0703c" if theme == "dark" else "#f0a070"
+    x, cy = cx - height / 2, top + height / 2
+    return (f'<defs><radialGradient id="logohalo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="{halo}" stop-opacity=".45"/>'
+            f'<stop offset="1" stop-color="{halo}" stop-opacity="0"/></radialGradient></defs>'
+            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{height * .78:.1f}" fill="url(#logohalo)" class="glow"/>'
+            f'<image href="{uri}" x="{x:.1f}" y="{top:.1f}" width="{height}" height="{height}" '
+            f'image-rendering="optimizeQuality" aria-hidden="true"/>')
 
 
 def hub(c, theme, x, y, w, h):
@@ -291,10 +291,10 @@ def hub(c, theme, x, y, w, h):
     o.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="16" fill="{c["hub"]}" stroke="{c["hub_line"]}"/>')
     o.append(f'<g clip-path="url(#hubclip)"><path d="{"".join(d)}" stroke="{c["grid"]}" stroke-opacity="{c["grid_o"]}" '
              f'stroke-width="1" fill="none" mask="url(#hubmask)"/></g>')
-    # content block: crafter logo (150) + 30 + wordmark cap (46) + 22 + rule + 40 + line
+    # content block: logo (150) + 30 + wordmark cap (46) + 22 + rule + 40 + line
     block = 150 + 30 + 46 + 22 + 40
     top = y + (h - block) / 2
-    o.append(crafter(theme, cx, top, 150))
+    o.append(logo(theme, cx, top, 150))
     wy = top + 150 + 30 + 46
     o.append(text("ARFFORNIA", "brand", fit("ARFFORNIA", "brand", 64, w - 40), cx, wy, "url(#brand)", anchor="middle", tracking=1.5))
     o.append(f'<rect x="{cx - 16}" y="{wy + 20}" width="32" height="2" fill="{c["brand"][0]}"/>')
@@ -385,12 +385,12 @@ def build(theme):
     o.append(text(FOOTER, "text", LABEL, M, yb, c["muted"]))
     H = int(yb + M - 6)
     head = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" '
-            f'aria-label="The Arffornia ecosystem. Play: launcher, website, sign-in pages. Game: mod, provisioning, votes. '
+            f'aria-label="The Arffornia ecosystem. Play: launcher, website, sign-in pages. Game: mod, provisioning, the Velocity proxy that routes players and forwards votes. '
             f'Toolkit: Nexus libraries, docs and Noodle, agent kit. All of it runs on MaaS, Minecraft as a Service.">'
             f'<style>@keyframes belt {{ to {{ stroke-dashoffset: -24 }} }} .belt {{ animation: belt 1.6s linear infinite }} '
             f'@keyframes pulse {{ 0%,100% {{ opacity: .45 }} 50% {{ opacity: 1 }} }} .glow {{ animation: pulse 2.4s ease-in-out infinite }} '
-            f'@keyframes blink {{ 0%,70%,100% {{ opacity: .2 }} 80% {{ opacity: 1 }} }} .beacon {{ animation: blink 2s linear infinite }} '
-            f'@media (prefers-reduced-motion: reduce) {{ .belt, .glow, .beacon {{ animation: none }} }}</style>'
+            f''
+            f'@media (prefers-reduced-motion: reduce) {{ .belt, .glow {{ animation: none }} }}</style>'
             f'<rect width="{W}" height="{H}" rx="24" fill="{c["canvas"]}"/>')
     return head + glyph_defs() + "".join(o) + "</svg>"
 
