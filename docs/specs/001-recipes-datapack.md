@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft: needs decisions |
+| **Status** | Accepted with open points (Chantier 0 answers, 31 Oct 2026) |
 | **Milestone** | M3 · Gameplay foundations |
 | **Repos** | Arffornia_Mods, Arffornia_Website, Arffornia_Provisioning |
 | **Related** | [ADR-0006](../decisions/0006-recipes-as-datapack.md) · issues Mods [#14](https://github.com/Arffornia/Arffornia_Mods/issues/14), [#16](https://github.com/Arffornia/Arffornia_Mods/issues/16), [#18](https://github.com/Arffornia/Arffornia_Mods/issues/18), [#27](https://github.com/Arffornia/Arffornia_Mods/issues/27), [#28](https://github.com/Arffornia/Arffornia_Mods/issues/28), [#29](https://github.com/Arffornia/Arffornia_Mods/issues/29) · [002](002-machine-framework.md), [003](003-machine-tier-plan.md) |
@@ -45,7 +45,8 @@ the `RecipeManager`.
 | Item gated **stage-locked**, stage locked | The crafting table shows the result greyed out with a lock icon and a tooltip "Unlocks at Stage 2 · Steel"; taking it is impossible. JEI shows the recipe with the lock badge. |
 | Item gated **stage-locked**, stage unlocked | Normal crafting. |
 | Stage just completed (Space Elevator launch) | Toast "Stage 2 · Steel unlocked: 14 recipes", JEI refreshes lock badges, open machine screens update. |
-| Player joins another FTB team | Stages switch to the new team's set at once (see D3). |
+| Player joins another FTB team | Stages switch to the new team's set at once; leaving switches back to the personal set (see [Progression scope](#progression-scope)). |
+| Player looks up a late item in JEI | The full recipe is visible (never hidden), with the machine, the tier, the milestone that unlocks it and the path to get there (see [JEI: the recipe atlas](#jei-the-recipe-atlas)). |
 
 All strings are lang keys in `en_us` and `fr_fr` ([ADR-0002](../decisions/0002-english-codebase-bilingual-players.md)).
 Stage display names come from the datapack (`stage` files, below) with `en`/`fr` keys.
@@ -197,6 +198,92 @@ sequenceDiagram
 `ProgressionBackend.fetchAllCustomRecipes/fetchProgressionConfig`, the client calls for
 recipes, the `linkedProgressionId` on Crafters (replaced by team stages).
 
+### Editing and fast apply
+
+Brian's requirement (Chantier 0): editing a recipe must stay simple, on the website, and
+reach players fast. The datapack is only the delivery format; nobody edits JSON by hand.
+
+| Step | What happens | Time |
+|---|---|---|
+| 1. Edit | Website editor: item picker with icons, ingredient slots, machine, energy, time, gate mode, stage. The form is generated from the JSON Schema, so it can only save valid recipes. A "diff vs published" panel shows what will change. | — |
+| 2. Publish | "Publish" bumps the export sha and records who published what (audit log). | instant |
+| 3. Server pull | The website calls the server's admin endpoint (RCON or the mod's authenticated hook) which runs `/arffornia datapack pull`: download, verify sha256, write `world/datapacks/arffornia_progression/`. | seconds |
+| 4. Reload | The server announces "Recipes update in 10 s" and runs `/reload`. | a short server pause (to measure on a full-pack preview) |
+| 5. Clients | Every connected client receives the new recipes automatically (next section); JEI rebuilds; open machine screens refresh their selector. Players never re-download the modpack. | seconds |
+| 6. History | A Provisioning workflow snapshots the published zip into a PR, so git keeps the full history (Brian's "keep git versioning" rule) and the next boot uses the same files. | next run |
+
+Safety: "Publish" is refused while the export fails schema validation; a GameTest boot of the
+snapshot runs in CI on the Provisioning PR; rollback is "re-publish the previous sha" (one
+click, the website keeps every exported zip).
+
+### How the datapack reaches clients
+
+Recipes are **server data**. Clients never need the datapack files:
+
+1. On login, and after every `/reload`, the server sends the whole recipe list to every
+   connected client (`ClientboundUpdateRecipesPacket` in 1.21.1). Our recipe types are
+   included because their serializer has a `StreamCodec`.
+2. The client fires `RecipesUpdatedEvent`; JEI rebuilds its recipe categories from the new
+   `RecipeManager`.
+3. Stage definitions (names, icons, tiers) travel in our own `StageSyncPayload`, sent at the
+   same moments.
+4. What still needs a client update: **new textures, models, sounds and lang keys** (they
+   are client resources). Recipes may only use items the client already has.
+
+Upgrade risk: since Minecraft 1.21.2, vanilla no longer sends the full recipe list to
+clients. On NeoForge for 1.21.2+ the mod must opt its types in when the datapack syncs
+(`OnDatapackSyncEvent#sendRecipes`, to verify at upgrade time), or JEI shows nothing. Pin
+this in the upgrade checklist; nothing to do on 1.21.1.
+
+### JEI: the recipe atlas
+
+Gating never hides how an item is made. Experienced Minecraft players must be able to plan
+the whole factory from JEI on day one (Brian, Chantier 0). JEI is the pack's recipe viewer
+(with FTB JEI Extras and Just Enough Mekanism Multiblocks already installed); EMI is not in
+the pack (see D7).
+
+| Feature | What the player sees | How |
+|---|---|---|
+| Lock ribbon | Every gated recipe has a ribbon in the tier colour: "Tier 3 · Steel · milestone *Alloy Smelting*", and a lock or check mark for the player's team | JEI `IRecipeCategory#draw` overlay + vanilla crafting extension for `arffornia:staged` |
+| Machine card | On a machine recipe: the machine icon, its **footprint** (e.g. 5×5×5), FE/t, duration, and the rate in **items per minute** (Satisfactory units) | category layout; numbers from the recipe and `machine_stats` data map |
+| Unlock path | A JEI category "Arffornia · Unlock path" for every gated item: the milestone, what to deliver to the Space Elevator, and the chain of prerequisite milestones. A button opens the progression graph centred on that milestone | category fed from the stage files; click handler opens `ProgressionGraphScreen` |
+| Item tooltip | In any inventory: "Locked · Tier 3 Steel · made in Foundry" | `ItemTooltipEvent`, only when every recipe for the item is gated |
+| Multiblock preview | For each multiblock machine: a rotating 3D render, a layer slider, a bill of materials, and a "Project hologram" button that hands the player a Blueprint ghost in the world | custom category drawable (same approach as Just Enough Mekanism Multiblocks) |
+| Production planner | "Plan" on any machine recipe: choose a target rate (items/min), get the number of machines, the power budget, and the upstream chain | client-side solver over the synced recipes; the website shows the same planner |
+| Freshly unlocked | Toast "Tier 3 · Steel unlocked: 14 recipes"; a "new" badge on those recipes for 24 h | on stage delta in `StageSyncPayload` |
+| Space Elevator deliveries | A category listing each phase's delivery (items and counts), with the team's progress bar | stage files + team progress |
+| Web atlas | Public pages `arffornia.com/recipes/<item>` with the same cards, linkable from Discord | website renders from the published export |
+
+### Progression scope
+
+Brian described today's model: a `progressions` table, soft-deleted teams, a personal
+progression per new player, the team's progression while in a team, and back to the
+personal one on leaving. The code confirms it:
+
+- `users.solo_progression_id` (created at first login) and `users.active_progression_id`
+  (what the game uses), `teams.progression_id` (unique), `teams` soft-deleted when the last
+  member leaves (`TeamService`, `TeamRepository`).
+- The mod listens to FTB Teams `PLAYER_JOINED_PARTY` / `PLAYER_LEFT_PARTY` and calls
+  `/teams/player/join|leave` (`FTBTeamsEventHandler`).
+
+**Honest comparison with "per FTB team, solo = team of one".** For players, the two are
+the **same behaviour**. FTB Teams already gives every player a personal team and moves them
+into a party team and back. The proposal only changes the **key**. The mod-side store is
+keyed by the FTB team id, and the personal team counts as a team. Then one code path,
+`stagesOf(teamOf(player))`, serves solo and group play. **Keep Brian's model and its
+website schema**, and adopt the unified key on the mod side only (`TeamStages`), mapping a
+personal team to `solo_progression_id`. No website migration is needed.
+
+The code review found real gaps, independent of the model:
+
+| Gap | Today | Fix (default) |
+|---|---|---|
+| Creating a party resets progress | `findOrCreateTeam` creates a fresh stage-1 progression, so a solo player at tier 5 who creates a party to invite a friend drops to tier 1 | Seed the new party's progression from the **creator's** personal progression (D3a) |
+| Disband is never sent | the website has `/teams/disband`, the mod never calls it | Listen to the FTB team-deleted event and call it |
+| Lost events | join/leave are fire-and-forget; an API outage leaves the player on the wrong progression | On login, the mod sends the player's current FTB team id and the website corrects `active_progression_id` (reconcile) |
+| Restore path is dead | FTB party ids are random and never reused, so `restore()` never runs | Keep soft delete for history; no change |
+| Machines and leavers | machines placed in a team keep the team's stages after a member leaves | Machine owner = team (spec 002 D4), re-bindable with the Wrench by the team owner |
+
 ## Testing
 
 | Layer | Test |
@@ -232,18 +319,23 @@ Docs: [NeoForge recipes](https://docs.neoforged.net/docs/1.21.1/resources/server
 Rollback: the previous mod version and the old API endpoints stay until step 6 ships in a
 release; the datapack folder can be deleted to return to the old behaviour.
 
-## Decisions needed
+## Decisions
 
-| # | Question | Options | Recommendation |
+Chantier 0 answers (31 Oct 2026). "Answered" rows are settled; "Needs decision" rows keep a default.
+
+| # | Question | Answer / default | State |
 |---|---|---|---|
-| D1 | How does the datapack reach servers? | (a) Provisioning PR snapshot (reviewed, restart to apply); (b) server pulls the zip at boot and on `/arffornia datapack pull`; (c) both | **(c)**: (a) is the normal path, reviewable and reproducible; (b) is an admin hot-fix path |
-| D2 | What is the gating unit: milestone or stage? | (a) per milestone (today's model, fine-grained); (b) per stage (coarse, simpler to read) | **(a)** keyed by a stable milestone slug, with the stage number in the key prefix for readability |
-| D3 | Progression scope (issue #18) | (a) per player; (b) per FTB team; (c) per progression entity (as today) | **(b) per FTB team**, solo players are a team of one (FTB Teams already does this); matches the website's `teams.progression_id` |
-| D4 | Gating mode default and automated crafters | (a) machine-only everywhere (today); (b) stage-locked in place everywhere; (c) per recipe, default machine-only | **(c)**. Machine-only for anything that should feel "industrial"; stage-locked for vanilla/basic items. Automated crafters without an owner are denied for stage-locked recipes |
-| D5 | Is the export endpoint public? | (a) public; (b) service token | **(a) public** read-only, rate-limited: recipes are visible in JEI anyway |
-| D6 | Where do stage display names live? | (a) lang keys in the mod (needs a mod release per new stage); (b) literal `en`/`fr` text in the stage JSON; (c) a generated resource pack | **(b)** for M3 (`{"name": {"en": "...", "fr": "..."}}`, resolved by client locale); revisit if more languages come |
+| D1 | How does the datapack reach servers? | **Both**: website "Publish" triggers the server pull + `/reload` for fast apply; a Provisioning snapshot PR keeps git history and drives the next boot | Answered (datapack agreed; fast apply + easy editing required) |
+| D2 | Gating unit | Per milestone, keyed by a stable slug with the tier prefix | Default kept, not challenged |
+| D3 | Progression scope | **Keep today's model** (personal progression, team progression while in a party, back on leave); the mod keys stages by FTB team id with the personal team mapped to `solo_progression_id` | Answered after the challenge above |
+| D3a | New party's starting progression | (a) copy the creator's personal progression; (b) blank stage 1 (today) | Needs decision, default **(a)** |
+| D3b | Leaving a party | (a) back to the frozen personal progression (today); (b) personal progression takes the max of both | Needs decision, default **(a)**: (b) lets players farm unlocks by hopping teams |
+| D4 | Gating mode | Per recipe: machine-only for industrial items, stage-locked for basics; ownerless automated crafters are denied | Answered (agree) |
+| D5 | Export endpoint public? | Public, read-only, rate-limited | Default kept |
+| D6 | Stage display names | Literal `en`/`fr` in the stage JSON | Default kept |
+| D7 | Recipe viewer | (a) JEI only, with the atlas features above; (b) also ship an EMI plugin | Needs decision, default **(a)**: JEI is the pack standard; the plugin code keeps a viewer-neutral core so EMI stays possible |
 
-When D1–D6 are answered, update ADR-0006 to `accepted` with these choices.
+When this PR merges, ADR-0006 is `accepted` with these choices.
 
 ## Work breakdown
 
@@ -261,3 +353,9 @@ When D1–D6 are answered, update ADR-0006 to `accepted` with these choices.
 | 10 | Provisioning: snapshot workflow and datapack lint | Provisioning | Nightly/manual PR with the unpacked pack; CI boots GameTest server with it and fails on parse errors | M |
 | 11 | Optional: `/arffornia datapack pull` hot update | Mods | Downloads, verifies sha256, `/reload`; admin-only; timeout and error message | S |
 | 12 | Remove the HTTP recipe path | Mods | `ClientRecipeCache`, `CustomRecipeManager`, `RecipeBanManager`, `migrateOnStartup` deleted; clients make no recipe HTTP calls | S |
+| 13 | Website editor: schema-driven form, item picker, diff vs published, Publish button with audit log | Website | Invalid recipe cannot be saved; publish records author and sha | M |
+| 14 | Publish → server pull + announced `/reload` | Website + Mods | Recipe change visible in JEI of a connected client in under a minute on the preview server | S |
+| 15 | JEI atlas: lock ribbon, machine card (footprint, FE/t, items/min), unlock-path category, tooltips | Mods | Screenshots in PR; en/fr | M |
+| 16 | JEI multiblock preview and Blueprint projection | Mods | Layer slider, bill of materials, hologram button | M |
+| 17 | Production planner (in game and on the website) | Mods + Website | Target rate → machine count and power, matching a hand-computed fixture | M |
+| 18 | Progression reconcile on login, disband event, party seeding (D3a) | Mods + Website | GameTest/feature tests for create, join, leave, disband, outage then login | S |

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft: needs decisions |
+| **Status** | Accepted direction (Chantier 0, 31 Oct 2026); art direction to research |
 | **Milestone** | M3 · Gameplay foundations |
 | **Repos** | Arffornia_Mods |
 | **Related** | issues Mods [#17](https://github.com/Arffornia/Arffornia_Mods/issues/17), [#30](https://github.com/Arffornia/Arffornia_Mods/issues/30), [#31](https://github.com/Arffornia/Arffornia_Mods/issues/31) · [001](001-recipes-datapack.md) (recipes, stages), [003](003-machine-tier-plan.md) (which machines) |
@@ -10,9 +10,10 @@
 ## Summary
 
 A small framework so that a new machine is **one `MachineType` definition, a model and a
-texture**, not a new set of classes. It covers single-block machines (Constructor-class)
-and **template multiblocks formed with the Wrench**, in the style of Immersive Engineering
-but with a cleaner, futuristic, Satisfactory-like look. Every machine shares the same
+texture**, not a new set of classes. It covers single-block utility machines (the Crafter)
+and, for every production machine, **template multiblocks formed with the Wrench**, in the style of Immersive Engineering
+but with a cleaner, futuristic, Satisfactory-like look: **big multiblocks, slow machines, huge
+factories**. Every machine shares the same
 parts: slot layout, side configuration, energy buffer, recipe processor, synced data, and
 one menu/screen base built on an in-game GUI design system. The current Crafter and Space
 Elevator are ported onto it.
@@ -56,6 +57,96 @@ Elevator are ported onto it.
 - **Info:** Jade/WTHIT tooltip shows status, progress, energy, current recipe.
 
 ## Design
+
+### Direction from Chantier 0
+
+Brian agreed to the framework and set the direction:
+
+- **Satisfactory-futurist style**: big, impressive multiblocks; clean panels, light strips,
+  conveyors and moving parts. Not IE's rustic look.
+- **Not overpowered in speed.** A machine is slow on its own; throughput comes from
+  building many of them, as in Satisfactory. The goal is **huge factories**.
+- **Machines take space.** Even early machines have a footprint.
+- **Watch multiblock performance** and the classic Minecraft pitfalls, such as chunk
+  unloading and a machine that sits across two chunks.
+
+Reference already in the pack: **Oritech**, the futuristic tech mod with large animated
+machines, including its **Particle Accelerator** (a player-built accelerator track). Use it
+as the visual and quality bar in game, and borrow its ideas: one "core" block that forms
+the machine, animated models (GeckoLib, also in the pack), and addon blocks attached to the
+frame. Our machines must look as good, and fit the Arffornia tier palette (spec 003).
+Immersive Engineering (fixed templates) and Extreme Reactors / Mekanism (variable-size
+casings) are the two other in-pack references.
+
+### Scale and pacing
+
+Starting numbers, to tune on a preview server. Rates are per machine; the factory scales by
+count.
+
+| Machine (tier) | Footprint (W×D×H) | Base rate example | Notes |
+|---|---|---|---|
+| Smelter (0) | 2×2×3 | 30 ingots/min | first machine, hand-built from casings |
+| Constructor (0) | 2×3×3 | 20 plates/min | a row of them is the first "factory" |
+| Assembler (2) | 3×5×3 | 5 reinforced plates/min | two inputs, conveyor ports on the long sides |
+| Foundry (3) | 5×5×5 | 10 steel/min | first flagship multiblock (D2) |
+| Refinery (5) | 5×7×7 | fluids, 30 plastic/min | pipes in/out on opposite faces |
+| Manufacturer (6) | 7×9×6 | 1 heavy frame/min | four inputs |
+| Particle Accelerator (8) | ring, 15×15×5 minimum, grows with the track | variable power | follows Oritech's "longer track = more speed" idea |
+| Quantum Encoder (9) | 9×9×9 | slow, huge power | endgame showpiece |
+
+Design rules:
+
+1. **Base speed is low**, comparable to an early Mekanism or Create machine, so 10 machines
+   are needed where other mods use one. Speed upgrades (later, D5) cost power
+   superlinearly.
+2. **Ports, not faces**: big machines expose a few clearly marked port blocks (conveyor
+   in/out, fluid, power), so factories have readable lines, like Satisfactory belts.
+3. **Spacing matters**: every footprint is a multiple of the conveyor grid (1 block), so
+   rows of machines tile cleanly.
+
+### Large multiblocks: performance and chunk safety
+
+| Pitfall | Rule |
+|---|---|
+| Machine across two chunks, one unloaded | The master ticks only when **every chunk of its bounding box is loaded and entity-ticking** (`level.hasChunksAt(min, max)` once per second, cached). Otherwise it pauses, keeping progress. Never call `getBlockEntity` on an unloaded position; never force-load from a tick. |
+| Footprint limit | A template may span at most **2×2 chunks** (32×32 blocks), so the bounding-box check stays cheap and predictable. |
+| Unloaded machines stop | Expected, as in vanilla. Factories stay loaded with **FTB Chunks force-loading**, whose limits come from ranks (spec 009). The machine itself never force-loads, to avoid hidden lag. |
+| Parts that tick | Parts never tick. Only the master has a ticker, and it **sleeps** (ticks every 20 ticks) when idle or output-blocked, waking up on input change. |
+| Structure checks | Done on form, on part break and on chunk load of the master (one pass), never per tick. Breaking any part notifies the master through the stored offset. |
+| Block-update storm on form | Replace blocks with flags that skip neighbour updates (`Block.UPDATE_CLIENTS` only, then one final neighbour update on the ports), batched in one tick. |
+| Light recomputation | Formed parts keep the light properties of the casings they replace, so forming does not relight a 5×5×5 volume. |
+| Renderer culling | A large model drawn by the master disappears when the master block leaves the screen unless the render bounding box covers the whole machine: override `getRenderBoundingBox` (NeoForge `AABB` of the template). |
+| Client chunk unload | Rendering uses the master's synced state only; parts carry no render data. |
+| Capability lookups | Ports cache neighbour capabilities with `BlockCapabilityCache` (invalidated by NeoForge), never per-tick lookups. |
+| Save size | Parts store only the master offset (a few bytes); the master stores the original block states once, palette-compressed. |
+| Profiling | Every flagship machine PR attaches a **spark** profile (spark is in the pack) of 50 running machines on the preview server. |
+
+### Art direction research (next step)
+
+A short research chantier before modelling, as promised in Chantier 0. It builds on the
+3D pipeline spec ([005](https://github.com/Arffornia/docs/pull/1), docs PR #1) so models
+are saved in a dedicated assets repo and re-exported for launcher renders, loading screen
+and in-game blocks.
+
+Deliverable: one board per direction with the same **five example machines**, rendered from
+the same Blockbench sources:
+
+| Example machine | Why it is a good test |
+|---|---|
+| Smelter (2×2×3) | small; shows how the style reads at block scale |
+| Assembler (3×5×3) | conveyor ports and moving arms |
+| Foundry (5×5×5) | glowing interior, heat, the first "wow" |
+| Particle Accelerator (ring) | huge, light trails, the endgame showpiece |
+| Space Elevator (existing) | the pack's identity object; must match the others |
+
+Directions to compare (Brian picks or mixes):
+
+| Direction | Look |
+|---|---|
+| A · Industrial futurist (Satisfactory) | painted metal panels, orange/grey trims, chunky vents, readable silhouettes |
+| B · Clean sci-fi (Oritech-like) | white/graphite panels, cyan light strips, smooth curves, GeckoLib animations |
+| C · Hex-tech | hexagonal panels and lights (echoes the hex-mosaic UI idea Brian liked), tier colour in the hex cells |
+
 
 ### Code structure (`fr.thegostsniperfr.arffornia.machine`)
 
@@ -123,7 +214,7 @@ the block (`arffornia:machine_stats`) so balance changes need no release
 | Breaking | any part → master disassembles: restore original blocks except the broken one (which drops as its original item), drop inventory |
 | Rendering | parts are invisible (`RenderShape.INVISIBLE`); the master renders one **baked model** for the whole machine (OBJ or Blockbench JSON split into ≤16³ sub-models), rotated by state; moving parts via a BER only when the machine is active; GeckoLib is available in the pack if richer animation is wanted later (D6) |
 | Preview | Blueprint item: holds a multiblock id, renders ghost blocks in the world (client), layer by layer; JEI/manual page shows the structure |
-| Chunk safety | formation only if all positions are loaded; parts never tick |
+| Chunk safety | formation only if all positions are loaded; parts never tick; full rules in [Large multiblocks](#large-multiblocks-performance-and-chunk-safety) |
 
 Inspiration: IE forms fixed structures with its hammer on a defined trigger block and
 renders the formed machine as one model ([IE hammer](https://ftb.fandom.com/wiki/Engineer%27s_Hammer),
@@ -189,16 +280,16 @@ sequenceDiagram
 4. The `CrafterPartBlock` is replaced by the generic part block; a block remapping keeps
    old worlds loading.
 
-## Decisions needed
+## Decisions
 
 | # | Question | Options | Recommendation |
 |---|---|---|---|
-| D1 | Direction confirmation (issue #17) | (a) this framework; (b) depend on an existing multiblock library | **(a)**: small, ours, no third-party core lib ([ADR-0003](../decisions/0003-keep-owner-libraries.md) spirit); IE-style templates are simple to build |
+| D1 | Direction confirmation (issue #17) | (a) this framework; (b) depend on an existing multiblock library | **Answered: (a)**, with the Satisfactory-futurist, big-footprint, slow-machine direction above |
 | D2 | First multiblock to validate the framework | (a) Foundry (3×3×3, items only); (b) Refinery (fluids); (c) a reworked Space Elevator | **(a) Foundry**: items only, a core tier machine, visible payoff |
 | D3 | Recipe selection | (a) player selects one recipe (Satisfactory); (b) auto-match; (c) select, with auto as an option per machine | **(c)**, default select: it is the Satisfactory feel and makes automation predictable |
 | D4 | Machine ownership for stage checks | (a) placer's team at placement; (b) whoever opens/configures it | **(a)**, re-bindable by the owner with the Wrench |
 | D5 | Overclocking in M3 | (a) none; (b) upgrade slots (speed/efficiency cards); (c) Satisfactory-like clock slider with superlinear power | **(a)** in M3, reserve the `UPGRADE` role; plan (c) later, it fits the theme |
-| D6 | Model pipeline | (a) Blockbench JSON models; (b) OBJ; (c) GeckoLib for animated multiblocks | **(a)** for blocks and small multiblocks, **(c)** only for flagship machines later |
+| D6 | Model pipeline (GeckoLib now suggested for every big machine, to match Oritech) | (a) Blockbench JSON models; (b) OBJ; (c) GeckoLib for animated multiblocks | **(a)** for blocks and small multiblocks, **(c)** only for flagship machines later |
 | D7 | Crafter shape | (a) keep 2-tall; (b) become a 1-block machine | **(b)**: simpler, no part block, fits "Constructor-class" machines |
 
 ## Work breakdown
@@ -218,3 +309,7 @@ sequenceDiagram
 | 11 | Multiblock rendering and Blueprint hologram | Formed machine renders as one model; hologram shows next layer; mismatch highlight | M |
 | 12 | First multiblock: Foundry (per D2) | Forms from template, runs its recipes from data, GUI, JEI category, en/fr | M |
 | 13 | Jade provider for machines | Tooltip shows status, progress, energy, recipe | S |
+| 14 | Chunk-safety guard: bounding-box loaded check, pause/resume, sleep when idle | GameTest: unload one chunk of a 2-chunk machine, it pauses and resumes without loss; spark profile of 50 machines attached | M |
+| 15 | Art direction research: 5 example machines × 3 directions | Boards rendered from Blockbench sources in the assets repo; Brian picks | M |
+| D8 | Art direction | (a) industrial futurist; (b) clean sci-fi; (c) hex-tech; (d) mix after the research boards | Needs decision after the DA research, default **(d)** |
+| D9 | Footprint cap | (a) 2×2 chunks; (b) no cap | **(a)**: keeps chunk checks cheap; the Particle Accelerator track counts as one machine per segment group |

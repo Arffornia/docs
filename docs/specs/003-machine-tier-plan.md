@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Proposal |
+| **Status** | Proposal (footprints updated after Chantier 0: big, slow machines) |
 | **Milestone** | M3 · Gameplay foundations (content lands progressively after M3) |
 | **Repos** | Arffornia_Mods (machines, parts), Arffornia_Website (milestones, gates), Arffornia_Provisioning (KubeJS tweaks, mod list) |
 | **Related** | Mods [#13](https://github.com/Arffornia/Arffornia_Mods/issues/13) (candidate mods) · [001](001-recipes-datapack.md) (gating) · [002](002-machine-framework.md) (machines) |
@@ -76,15 +76,15 @@ Constructor/Smelter (~4 MW), Foundry (~16 MW) and Refinery (~30 MW) are approxim
 
 | Tier | Theme | New Arffornia machine(s) | Shape | In → Out | FE/t | Power source expected |
 |---|---|---|---|---|---|---|
-| 0 | Landfall | **Smelter** (ore → ingot), **Constructor** (1 → 1) | single block | 1 → 1 | 40 | Create (water wheel + alternator addons) or a small burner (Arffornia "Biomass Burner" optional) |
+| 0 | Landfall | **Smelter** (ore → ingot), **Constructor** (1 → 1) | 2×2×3 and 2×3×3 multiblocks | 1 → 1 | 40 | Create (water wheel + alternator addons) or a small burner (Arffornia "Biomass Burner" optional) |
 | 1 | Workshop | — (more Constructor recipes, Space Elevator phase 1) | — | — | — | Solar Generation tier 1, Powah starter |
-| 2 | Part Assembly | **Assembler** (2 → 1) | single block | 2 → 1 | 150 | Powah basic, Solar Generation |
-| 3 | Steel | **Foundry** (alloys) | 3×3×3 multiblock | 2 → 1 | 160 | Immersive Engineering diesel/steam, Powah |
-| 4 | Logistics | **Packager** (fluid ↔ container), Assembler upgrades | single block | 1 + fluid → 1 | 100 | same, more of it |
-| 5 | Oil | **Refinery** (fluid chemistry) | 3×3×5 multiblock | item + fluid → item + fluid | 300 | IE diesel, Mekanism gas-burning, Oritech |
-| 6 | Industry | **Manufacturer** (4 → 1) | 5×3×5 multiblock | 4 → 1 | 550 | Extreme Reactors (small), Mekanism generators |
-| 7 | Control | **Blender** (2 items + 2 fluids → item + fluid) | 3×3×4 multiblock | mixed | 750 | Extreme Reactors, Powah advanced |
-| 8 | Particles | **Particle Accelerator** ("Ender Collider") | large multiblock 7×5×9 | 2 + fluid → 1 | 2,500–15,000 variable | Extreme Reactors turbines, Mekanism fission |
+| 2 | Part Assembly | **Assembler** (2 → 1) | 3×5×3 multiblock | 2 → 1 | 150 | Powah basic, Solar Generation |
+| 3 | Steel | **Foundry** (alloys) | 5×5×5 multiblock | 2 → 1 | 160 | Immersive Engineering diesel/steam, Powah |
+| 4 | Logistics | **Packager** (fluid ↔ container), Assembler upgrades | 3×3×3 multiblock | 1 + fluid → 1 | 100 | same, more of it |
+| 5 | Oil | **Refinery** (fluid chemistry) | 5×7×7 multiblock | item + fluid → item + fluid | 300 | IE diesel, Mekanism gas-burning, Oritech |
+| 6 | Industry | **Manufacturer** (4 → 1) | 7×9×6 multiblock | 4 → 1 | 550 | Extreme Reactors (small), Mekanism generators |
+| 7 | Control | **Blender** (2 items + 2 fluids → item + fluid) | 5×5×6 multiblock | mixed | 750 | Extreme Reactors, Powah advanced |
+| 8 | Particles | **Particle Accelerator** ("Ender Collider") | ring, 15×15×5 minimum, grows with the track | 2 + fluid → 1 | 2,500–15,000 variable | Extreme Reactors turbines, Mekanism fission |
 | 9 | Quantum | **Quantum Encoder**, **Converter** ("Void Converter": ore ↔ ore, exotic matter) | large multiblocks | 3 + fluid → 1 + fluid | up to 20,000 | fusion, large reactors |
 
 Each tier ends with a Space Elevator phase that consumes the tier's flagship parts in bulk
@@ -149,7 +149,9 @@ Peripherals is present) — see D6.
 Accent colours for GUIs and machine trims (see [002](002-machine-framework.md) GUI kit):
 tier 0–2 copper/orange, 3–4 steel/blue-grey, 5–6 industrial yellow, 7 teal, 8 violet,
 9 white/cyan. Machines share a futuristic panel style (flat panels, light strips, vents)
-rather than IE's rustic look.
+rather than IE's rustic look. The final style comes from the art direction research in
+[002](002-machine-framework.md#art-direction-research-next-step); Oritech's machines are the
+in-pack quality bar.
 
 ## Testing
 
