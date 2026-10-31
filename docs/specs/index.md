@@ -10,6 +10,12 @@ are answered, its tasks become `agent-ready` issues.
 | [002](002-machine-framework.md) | Machine framework and multiblocks | M3 | Accepted direction | D2–D9, art direction research ([#17](https://github.com/Arffornia/Arffornia_Mods/issues/17)) |
 | [003](003-machine-tier-plan.md) | Machine tier plan (Satisfactory-inspired) | M3 | Proposal | D1–D8 in the spec ([#13](https://github.com/Arffornia/Arffornia_Mods/issues/13)) |
 
+| [008](008-arffornia-id.md) | Arffornia ID: identity, passkeys and the login experience | Platform | Draft: needs decisions | D1–D7 |
+| [009](009-modpack-lockfile-and-compatibility.md) | Modpack lockfile and mod-compatibility pipeline | Platform | Draft: needs decisions | D1–D5 |
+| [010](010-launcher-play-speed.md) | Launcher speed, from Play to the game window | Platform | Draft: needs decisions | D1–D4 |
+
+Specs 004–007 are in open PRs ([#1](https://github.com/Arffornia/docs/pull/1), [#7](https://github.com/Arffornia/docs/pull/7)).
+
 Order: 001 and 002 can start in parallel once decided. 003 feeds content (machines, parts,
 gates) into both and can be refined while they are built.
 

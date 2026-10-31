@@ -16,6 +16,14 @@ Short on purpose. If a rule is missing, follow what the code around you does and
 Community files (CONTRIBUTING, SECURITY, code of conduct, issue and PR templates) come from
 the org-wide `Arffornia/.github` repo unless a repo needs its own.
 
+## Money
+
+**No paid services.** Use free tiers, open source and self-hosted software. The only exceptions
+are a DNS name, or a few euros over a long period (approved by Brian). This also rules out paid
+certificates, paid CI minutes and paid SaaS. If a free option is weaker, say so in the PR and
+keep the free one. Record the trade-off in an ADR when it shapes the architecture (for example
+[ADR 0014](../decisions/0014-free-signing-and-updates.md)).
+
 ## Code
 
 - **Language**: English everywhere; player text through i18n in EN and FR.
