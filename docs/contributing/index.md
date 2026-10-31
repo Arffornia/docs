@@ -15,9 +15,9 @@ bug reports, fixes, tests, docs, translations.
 
 ## Ground rules
 
-- English in code and docs; player-facing text in English **and** French ([ADR-0002](../decisions/0002-english-codebase-bilingual-players.md)).
+- English in code and docs; player-facing text in English **and** French ([ADR-0002](../decisions/0002-english-codebase-bilingual-players.md)), including text in data and API responses ([translations](i18n.md), [ADR-0009](../decisions/0009-player-text-in-data-and-apis.md)).
 - The Nexus libraries are improved, never replaced ([ADR-0003](../decisions/0003-keep-owner-libraries.md)).
 - No secrets in git. Configuration uses placeholders (`${CFG_*}`) filled at deploy time.
 - Security issues: use **Report a vulnerability** on the repo, never a public issue.
 
-Next: [workflow](workflow.md) · [operating model](operating-model.md) · [standards](standards.md) · [AI agents](ai-agents.md) · [diagrams](diagrams.md)
+Next: [workflow](workflow.md) · [operating model](operating-model.md) · [standards](standards.md) · [AI agents](ai-agents.md) · [diagrams](diagrams.md) · [translations](i18n.md)
