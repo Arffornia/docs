@@ -68,6 +68,7 @@ nav:
   - Contributing:
       - contributing/index.md
       - Workflow: contributing/workflow.md
+      - Operating model: contributing/operating-model.md
       - Standards: contributing/standards.md
       - Working with AI agents: contributing/ai-agents.md
       - Diagrams: contributing/diagrams.md
@@ -80,6 +81,7 @@ nav:
       - 0005 Docs as code: decisions/0005-docs-as-code.md
       - 0006 Recipes as a datapack: decisions/0006-recipes-as-datapack.md
       - 0007 Preview environments: decisions/0007-preview-environments.md
+      - 0008 Chantiers and board projection: decisions/0008-chantiers-and-board-projection.md
       - Template: decisions/template.md
   - Roadmap: roadmap.md
   - Glossary: glossary.md

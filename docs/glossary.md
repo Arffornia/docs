@@ -17,5 +17,7 @@
 | **NuVotifier** | Protocol and plugin that receives votes from server-listing sites. |
 | **FE** | Forge Energy, the energy unit machines consume. |
 | **GameTest** | Minecraft's built-in automated test framework, run headless with `runGameTestServer`. |
+| **Chantier** | A group of PRs and decisions reviewed as one unit from one summary page, then merged in order by an orchestrator. See [operating model](contributing/operating-model.md). |
+| **Lane** | Board column of the operating model: Inbox, Agent queue, In flight, Awaiting Brian, Merging, Done. |
 | **ADR** | Architecture Decision Record, see [Decisions](decisions/index.md). |
 | **Agent-ready** | Issue label: scoped with acceptance criteria, an AI agent may implement it. |

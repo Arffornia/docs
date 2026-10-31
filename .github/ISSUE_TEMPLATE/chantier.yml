@@ -1,0 +1,76 @@
+name: Chantier
+description: "A group of PRs and decisions that Brian reviews as one unit (for agents and the orchestrator)"
+title: "Chantier: "
+labels: ["chantier"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One chantier = one review for Brian. See https://arffornia.github.io/docs/contributing/operating-model/
+        Add the label `chantier: review` only when every PR below is green and the summary page is published.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary page
+      description: "Link to the review page (artifact or docs page): what changed, why, decisions, how it was verified."
+      placeholder: https://claude.ai/artifact/...
+    validations: {required: true}
+  - type: textarea
+    id: goal
+    attributes:
+      label: What this chantier delivers
+      description: "Two or three lines, in plain words. The outcome, not the list of commits."
+    validations: {required: true}
+  - type: textarea
+    id: prs
+    attributes:
+      label: Pull requests in merge order
+      description: "One full PR URL per line, in the order the orchestrator merges them. Note stacked bases."
+      placeholder: |
+        1. https://github.com/Arffornia/Nexus_Java/pull/7 — foundation (base of #10)
+        2. https://github.com/Arffornia/Nexus_Java/pull/10
+    validations: {required: true}
+  - type: textarea
+    id: issues
+    attributes:
+      label: Issues it closes
+      description: "Full issue URLs. Same-owner issues are also added as sub-issues."
+  - type: textarea
+    id: decisions
+    attributes:
+      label: Decisions for Brian
+      description: "One checkbox per decision, each with a recommended default. Brian ticks or answers in a comment."
+      placeholder: |
+        - [ ] D1 · Stay on PHP 8.3 for now? — default: yes, upgrade in its own chantier
+  - type: textarea
+    id: verified
+    attributes:
+      label: Verified / not verified
+      description: "Commands run and results; what could not be checked and why."
+    validations: {required: true}
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk
+      options:
+        - "A — merge on green"
+        - "B — look at one thing"
+        - "C — needs a manual test"
+    validations: {required: true}
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Agent
+      options: ["Claude Code", "Codex", "OpenCode", "Copilot", "Human"]
+    validations: {required: true}
+  - type: input
+    id: order
+    attributes:
+      label: Stack order
+      description: "Position in Brian's stack (1 = first). The orchestrator renumbers when chantiers are added."
+      placeholder: "3"
+  - type: input
+    id: depends
+    attributes:
+      label: Depends on chantiers
+      description: "Chantier issue numbers that must merge first, e.g. #3 #5."
