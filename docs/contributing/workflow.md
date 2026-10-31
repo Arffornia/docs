@@ -6,9 +6,10 @@ flowchart LR
   R -->|yes| B[Branch + PR]
   R -->|needs-decision| M[Maintainer answers in the issue] --> R
   B --> C[CI: make check]
-  C --> V[Review]
+  C --> H[Chantier: PRs grouped,<br/>summary page]
+  H --> V[Maintainer validates the chantier]
   V -->|changes| B
-  V -->|approve| G[Merge to main]
+  V -->|approve| G[Orchestrator merges in order]
   G --> P[Release / deploy]
 ```
 
@@ -26,7 +27,8 @@ flowchart LR
 
 Milestones: **M1 · Foundation & security**, **M2 · Tests & CI**, **M3 · Gameplay foundations**.
 
-All issues show up on the org board **Arffornia Roadmap**.
+All issues show up on the org board **Arffornia Roadmap**, in lanes computed from these labels.
+How work flows through it, and how chantiers are reviewed and merged: [operating model](operating-model.md).
 
 ## Branches and commits
 
@@ -37,7 +39,9 @@ All issues show up on the org board **Arffornia Roadmap**.
 ## Pull requests
 
 The template asks for **What**, **Why**, **How it was tested** and **Risk & revert**.
-CI must be green. The maintainer merges; agents never merge.
+CI must be green. PRs are reviewed as part of a [chantier](operating-model.md); after the
+maintainer approves it, an orchestrator merges its PRs in order with merge commits. Agents never
+merge on their own.
 
 ## Releases
 

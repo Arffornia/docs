@@ -1,19 +1,37 @@
-# Keeps the org board "Arffornia Roadmap" in sync with open issues and PRs of every repo.
+# Keeps the org board "Arffornia Roadmap" in sync with issues, PRs and chantiers, and prints
+# Brian's stack in the run summary. Model: docs/contributing/operating-model.md.
 # Needs the org secret ADD_TO_PROJECT_PAT (fine-grained token, Organization → Projects: read and write).
 name: board-sync
 on:
   schedule:
     - cron: "17 * * * *"
+  issues:  # chantier issues live in this repo: refresh the board when one changes state
+    types: [opened, edited, labeled, unlabeled, closed, reopened]
   workflow_dispatch:
-permissions: {contents: read}
+    inputs:
+      dry_run: {description: "Print mutations instead of sending them", type: boolean, default: false}
+permissions: {contents: read, issues: read}
 concurrency: {group: board-sync, cancel-in-progress: false}
 jobs:
   sync:
+    if: github.event_name != 'issues' || contains(github.event.issue.labels.*.name, 'chantier')
     runs-on: ubuntu-latest
     timeout-minutes: 50
+    env:
+      BOARD_PRS: unlinked          # all | unlinked | none
+      ARCHIVE_DONE_DAYS: "0"       # set to 14 once Brian approves the cleanup
+      ARCHIVE_LINKED_PRS: "0"      # set to 1 once Brian approves the cleanup
+      # No hard WIP cap (ADR-0008, amended): set WIP_IN_FLIGHT / WIP_REVIEW only to get warnings.
+      DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
     steps:
       - uses: actions/checkout@v5
       - name: Sync board
         env:
           GH_TOKEN: ${{ secrets.ADD_TO_PROJECT_PAT }}
         run: python3 scripts/sync_board.py
+      - name: Brian's stack
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/chantiers.py | tee -a "$GITHUB_STEP_SUMMARY"
+          python3 scripts/chantiers.py --wip | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"

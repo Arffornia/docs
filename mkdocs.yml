@@ -4,7 +4,7 @@ site_url: https://arffornia.github.io/docs/
 repo_url: https://github.com/Arffornia/docs
 repo_name: Arffornia/docs
 edit_uri: edit/main/docs/
-copyright: Arffornia — maintained by Brian Perret and contributors
+copyright: "© Brian Perret and Arffornia contributors · Text CC BY 4.0, code MIT · NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT."
 
 theme:
   name: material
@@ -56,6 +56,7 @@ nav:
       - Tech stack: architecture/tech-stack.md
       - Repositories: architecture/repositories.md
       - Preview environments (planned): architecture/previews.md
+      - Discoveries log: architecture/discoveries.md
   - Components:
       - components/index.md
       - Website: components/website.md
@@ -68,6 +69,7 @@ nav:
   - Contributing:
       - contributing/index.md
       - Workflow: contributing/workflow.md
+      - Operating model: contributing/operating-model.md
       - Standards: contributing/standards.md
       - Working with AI agents: contributing/ai-agents.md
       - Diagrams: contributing/diagrams.md
@@ -81,7 +83,28 @@ nav:
       - 0005 Docs as code: decisions/0005-docs-as-code.md
       - 0006 Recipes as a datapack: decisions/0006-recipes-as-datapack.md
       - 0007 Preview environments: decisions/0007-preview-environments.md
+      - 0008 Chantiers and board projection: decisions/0008-chantiers-and-board-projection.md
       - 0009 Player text in data and APIs: decisions/0009-player-text-in-data-and-apis.md
+      - 0010 Open-source licences: decisions/0010-open-source-licences.md
+      - 0011 Two identity planes: decisions/0011-two-identity-planes.md
+      - 0012 Keep Laravel, outbox events: decisions/0012-keep-laravel-add-outbox-events.md
+      - 0013 Modpack lockfile: decisions/0013-modpack-lockfile.md
+      - 0014 Localize per player: decisions/0014-localize-per-player.md
+      - 0015 Free signing and updates: decisions/0015-free-signing-and-updates.md
       - Template: decisions/template.md
+  - Specs:
+      - specs/index.md
+      - 001 Recipes as a datapack: specs/001-recipes-datapack.md
+      - 002 Machine framework: specs/002-machine-framework.md
+      - 003 Machine tier plan: specs/003-machine-tier-plan.md
+      - 007 Loading and title screen: specs/007-loading-and-title-screen.md
+      - 008 Economy and rewards: specs/008-economy-and-rewards.md
+      - 009 Ranks, roles and permissions: specs/009-ranks-roles-permissions.md
+      - 010 Vote sites: specs/010-vote-sites.md
+      - 011 Mod intake: specs/011-mod-intake.md
+      - 012 Legal and compliance: specs/012-legal-compliance.md
+      - 013 Arffornia ID: specs/013-arffornia-id.md
+      - 014 Modpack lockfile and compatibility: specs/014-modpack-lockfile-and-compatibility.md
+      - 015 Launcher Play speed: specs/015-launcher-play-speed.md
   - Roadmap: roadmap.md
   - Glossary: glossary.md

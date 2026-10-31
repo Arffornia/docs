@@ -20,4 +20,4 @@ bug reports, fixes, tests, docs, translations.
 - No secrets in git. Configuration uses placeholders (`${CFG_*}`) filled at deploy time.
 - Security issues: use **Report a vulnerability** on the repo, never a public issue.
 
-Next: [workflow](workflow.md) · [standards](standards.md) · [AI agents](ai-agents.md) · [diagrams](diagrams.md) · [translations](i18n.md)
+Next: [workflow](workflow.md) · [operating model](operating-model.md) · [standards](standards.md) · [AI agents](ai-agents.md) · [diagrams](diagrams.md) · [translations](i18n.md)
