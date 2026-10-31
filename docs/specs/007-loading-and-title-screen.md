@@ -318,19 +318,61 @@ Paladium does it was not verified from a public source.
 
 **D5 done:** the DireWolf20/FTB logo and background are replaced in Provisioning (PR linked below).
 
+## Round 3 (2026-10-31): decided direction, assembly-line early window
+
+Brian's answers on round 2. They replace the round-2 defaults:
+
+- **Title and loading screens:** the **Honeycomb (A) layout in the launcher's colours (C)**. That
+  means plum surfaces, lavender text, launcher orange (`#ff7300`) and Montserrat. The factory
+  background is graded towards plum, so the game's first screen continues the launcher.
+- **Early window:** **our own provider at 20 fps, showing the assembly line**, not the press loop.
+
+![Title, honeycomb in launcher colours](007-loading-and-title-screen/round3/title.webp)
+![Loading, the six cells fill clockwise](007-loading-and-title-screen/round3/loading.webp)
+
+**The early window draws the whole tier 0–3 line.** The provider draws three layers on each 20 Hz
+tick:
+
+1. one quad from a 60-frame sheet (640×240 per frame, 1:1, no upscaling, transparent background,
+   3 s loop);
+2. a baked overlay (wordmark, "Starting the factory", bar track, the Mojang disclaimer);
+3. the progress bar in launcher orange.
+
+On a software GPU (llvmpipe), a tick takes **9 ms against a 50 ms budget**. The sheet is
+3840×2400, about 37 MB of RGBA in VRAM, and loads and uploads in 110–120 ms. Before shipping,
+D10 below can halve that.
+
+![Early window with the assembly line](007-loading-and-title-screen/round3/early-window.webp)
+![Early window, 20 fps](007-loading-and-title-screen/round3/early-window.anim.webp)
+
+**Mojang disclaimer.** Both screens carry "NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR
+ASSOCIATED WITH MOJANG OR MICROSOFT." (Minecraft Usage Guidelines), as Brian decided for mc-screens
+d7. The title screen keeps the vanilla copyright line.
+
+**The machines will change.** The art direction research (machines: 5 × 3 directions plus a
+synthesis, and a lint that rejects parts passing through each other) is in the assets repository
+(`docs/DA.md`). Every image here comes from the render pipeline. Once a direction is picked and the
+tier 0–3 machines are remade, these stills, the title clip and the early-window sheet are
+re-rendered by the same commands, with no manual step.
+
+Sources: assets repo `ui/directions/f-honeycomb-launcher.html`, `early/line.mjs`,
+`early/overlay-line.html`, `early/EarlySpriteProbe.java` (slot and overlay arguments).
+
 ## Decisions needed
 
 | # | Question | Options | Recommendation |
 |---|---|---|---|
 | D1 | Loading screen look (scene) | (a) A · Night Shift; (b) B · Maquette; (c) mix | **(a)**: emissive power-on reads best; B's palette fits the launcher and website light theme |
-| D1b | UI direction over the scene (round 2) | A Honeycomb; B Drafting sheet; C Launcher continuity; D Shift board; E Model studio; or a mix | **D Shift board** for the title (modern, no panels, the factory stays the hero) with **A Honeycomb** as the alternative if the hex identity wins; loading uses the same direction |
+| D1b | UI direction over the scene (round 2) | A Honeycomb; B Drafting sheet; C Launcher continuity; D Shift board; E Model studio; or a mix | **Decided (round 3): A Honeycomb layout in C's launcher colours**, for title and loading |
 | D2 | Title screen layout (round 1) | (a) A · Control Room; (b) B · Maquette Hero | superseded by D1b |
-| D3 | How to take over the early window | (a) own provider jar; (b) keep Drippy + FancyMenu; (c) Simple Custom Early Loading + APNG | **(a)**, with the 20 fps press loop (proved, see round 2) |
+| D3 | How to take over the early window | (a) own provider jar; (b) keep Drippy + FancyMenu; (c) Simple Custom Early Loading + APNG | **Decided (round 3): (a), 20 fps, showing the assembly line** |
 | D9 | Web-rendered menus | (a) native screens, TesseraUI for menus/GUIs; (b) MCEF/WebGUI for all menus; (c) MCEF only for content pages | **(a)** |
 | D4 | Launcher splash to cover JVM start | (a) yes, after the Electron upgrade; (b) no | **(a)** |
 | D5 | Third-party art currently shipped in `config/fancymenu/assets` | (a) remove now; (b) keep until replaced | **(a)** |
 | D6 | Which machines appear before their models exist | (a) tiers 0–3 as teasers, mocks replaced as 005 models land; (b) only released machines | **(a)** |
-| D7 | Small "Mojang Studios" credit on the loading screen | (a) keep, small; (b) remove | **(a)** (the title screen keeps the vanilla copyright line in any case) |
+| D7 | Small "Mojang Studios" credit on the loading screen | (a) keep, small; (b) remove | **Decided: the Usage Guidelines disclaimer on every screen with the brand** (round 3); the title keeps the vanilla copyright line |
+| D10 | Early-window sheet size | (a) 640×240 1:1, 60 frames (37 MB VRAM); (b) 640×240, 30 frames at 10 fps logic, held 2 ticks (18 MB); (c) 427×240 upscaled (25 MB, soft) | **(a)** for the first build; switch to (b) if a low-end report shows a slow first frame |
+| D11 | Title background colour | (a) the night render graded to plum in the screen (no extra render); (b) a dedicated "launcher" look in the renderer | **(a)** now; (b) once the machine art direction is picked and the scene is re-rendered anyway |
 | D8 | UI test cadence | (a) label `ui` + nightly; (b) every PR | **(a)**, as in 004 |
 
 ## Work breakdown
