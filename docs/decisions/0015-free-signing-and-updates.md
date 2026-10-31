@@ -4,7 +4,7 @@ date: 2026-10-31
 supersedes: ~
 ---
 
-# 0014 · Free code signing and auto-update for the launcher
+# 0015 · Free code signing and auto-update for the launcher
 
 ## Context
 - Brian's rule is no paid services (exceptions: a DNS name, or a few euros over a long period).

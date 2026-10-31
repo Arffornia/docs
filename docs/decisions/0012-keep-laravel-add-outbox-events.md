@@ -3,7 +3,7 @@ status: proposed
 date: 2026-10-31
 ---
 
-# 0011 · Keep Laravel; add an outbox event feed, not a message broker
+# 0012 · Keep Laravel; add an outbox event feed, not a message broker
 
 ## Context
 - The website (Laravel 13, PHP 8.5 since [#103](https://github.com/Arffornia/Arffornia_Website/pull/103))

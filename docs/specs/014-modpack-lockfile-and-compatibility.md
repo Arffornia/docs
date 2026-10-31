@@ -3,7 +3,7 @@ status: Draft: needs decisions
 date: 2026-10-31
 ---
 
-# 009 · Modpack lockfile and mod-compatibility pipeline
+# 014 · Modpack lockfile and mod-compatibility pipeline
 
 ## Summary
 
@@ -20,7 +20,7 @@ artisanal:
 
 Proposal: keep `modList.json` + `storage/` + Nexus_Mods (an owner library, [ADR 0003](../decisions/0003-keep-owner-libraries.md)).
 Add a **generated lockfile** and a **compatibility pipeline** in CI, and export **`.mrpack`**
-for interop. Do not migrate to packwiz. See [ADR 0012](../decisions/0012-modpack-lockfile.md).
+for interop. Do not migrate to packwiz. See [ADR 0013](../decisions/0013-modpack-lockfile.md).
 
 ## Options evaluated (2026-10-31)
 

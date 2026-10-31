@@ -3,7 +3,7 @@ status: Draft: needs decisions
 date: 2026-10-31
 ---
 
-# 010 · Launcher speed, from the Play click to the game window
+# 015 · Launcher speed, from the Play click to the game window
 
 ## Summary
 
@@ -41,7 +41,7 @@ halves the first download and every self-update.
 
 | # | Change | Gain | Effort | Where |
 |---|---|---|---|---|
-| O1 | **Lockfile** (spec 009): the launcher downloads one `modList.lock.json` (with an ETag) instead of resolving 330 entries | removes step 4 entirely; no API quota use by players | M | Provisioning, Nexus_Mods |
+| O1 | **Lockfile** (spec 014): the launcher downloads one `modList.lock.json` (with an ETag) instead of resolving 330 entries | removes step 4 entirely; no API quota use by players | M | Provisioning, Nexus_Mods |
 | O2 | **Conditional fetch**: `If-None-Match` / `If-Modified-Since` on the lock and index; a 304 means nothing changed, so skip to step 7 | warm launch in ~2 requests | S | Nexus_Mods |
 | O3 | **Hash cache**: store `{path → size, mtimeNs, sha1}` in `.arffornia/hashcache.json`; re-hash only when size or mtime changed | step 6 drops from minutes on HDDs to milliseconds | S | Nexus_Mods |
 | O4 | **Parallel downloads + hashing**: a bounded pool (6–8 downloads, `os.cpus()` hash workers in `worker_threads`); verify the hash *while streaming* | cold install limited by bandwidth | M | Nexus_Mods |
@@ -82,7 +82,7 @@ Not the launcher's code, but players feel it as "Play is slow":
 
 - Default JVM flags for a 330-mod pack: `-XX:+UseZGC -XX:+ZGenerational` on Java 21, or
   well-tuned G1. The RAM setting is ignored today ([#41](https://github.com/Arffornia/Arffornia_Launcher_V.5.2/issues/41)).
-- Startup mods to evaluate through the spec 009 pipeline: ModernFix (dynamic resources,
+- Startup mods to evaluate through the spec 014 pipeline: ModernFix (dynamic resources,
   faster launch), FerriteCore (memory). Check whether they are already in the pack before
   proposing them.
 
@@ -97,7 +97,7 @@ change. Without those numbers, no optimisation PR merges.
 
 | # | Decision | Options | Default |
 |---|---|---|---|
-| D1 | Order | O1+O2+O3 first / MCLC first / everything at once | **O3 + O5 first (small, local), then O1 + O2 with spec 009** |
+| D1 | Order | O1+O2+O3 first / MCLC first / everything at once | **O3 + O5 first (small, local), then O1 + O2 with spec 014** |
 | D2 | Background prefetch (O6) | on by default / opt-in / no | **On, paused while a game runs** |
 | D3 | Fallback mirror in Garage S3 | yes / no | **No for now** (homelab not 24/7) |
 | D4 | MCLC fixes | upstream PR + `patch-package` meanwhile / fork | **Upstream PR + `patch-package`** |
@@ -110,7 +110,7 @@ change. Without those numbers, no optimisation PR merges.
 | Hash cache (O3) + "Repair game files" (O9) | Nexus_Mods, launcher | S |
 | MCLC `maxSockets`, asset stamp, awaited library check (O5) | launcher | S ([#79](https://github.com/Arffornia/Arffornia_Launcher_V.5.2/issues/79)) |
 | Conditional fetch (O2) | Nexus_Mods | S |
-| Lockfile consumer (O1) + delta/atomic swap (O7) | Nexus_Mods | M (with spec 009) |
+| Lockfile consumer (O1) + delta/atomic swap (O7) | Nexus_Mods | M (with spec 014) |
 | Parallel downloads + streaming hash (O4) | Nexus_Mods | M |
 | Background prefetch (O6) + byte-based progress (O10) | launcher | M |
 | Installer size fix | launcher | done: [#78](https://github.com/Arffornia/Arffornia_Launcher_V.5.2/pull/78) |

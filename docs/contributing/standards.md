@@ -22,7 +22,7 @@ the org-wide `Arffornia/.github` repo unless a repo needs its own.
 are a DNS name, or a few euros over a long period (approved by Brian). This also rules out paid
 certificates, paid CI minutes and paid SaaS. If a free option is weaker, say so in the PR and
 keep the free one. Record the trade-off in an ADR when it shapes the architecture (for example
-[ADR 0014](../decisions/0014-free-signing-and-updates.md)).
+[ADR 0015](../decisions/0015-free-signing-and-updates.md)).
 
 ## Code
 

@@ -3,7 +3,7 @@ status: proposed
 date: 2026-10-31
 ---
 
-# 0010 · Two identity planes: players on the website, staff on Arffornia ID
+# 0011 · Two identity planes: players on the website, staff on Arffornia ID
 
 ## Context
 - Players sign in on the website with Microsoft. The website then checks Minecraft ownership
@@ -20,7 +20,7 @@ date: 2026-10-31
 - **Staff:** keep Keycloak for now. Make it passkey-first, add Google and Microsoft brokers
   with explicit account linking, apply the Arffornia theme, and start it from an optimized
   build. Run a Pocket ID spike before considering a replacement.
-- Details, flows and the comparison of alternatives are in [spec 008](../specs/008-arffornia-id.md).
+- Details, flows and the comparison of alternatives are in [spec 013](../specs/013-arffornia-id.md).
 
 ## Consequences
 - No Keycloak extension for the Xbox/Minecraft chain, and no extra redirect for players.

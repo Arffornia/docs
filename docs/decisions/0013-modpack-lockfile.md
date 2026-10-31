@@ -3,7 +3,7 @@ status: proposed
 date: 2026-10-31
 ---
 
-# 0012 · Keep Provisioning and Nexus_Mods; add a generated lockfile and a compatibility gate
+# 0013 · Keep Provisioning and Nexus_Mods; add a generated lockfile and a compatibility gate
 
 ## Context
 - Provisioning is git-versioned (good) but resolves ~330 mod descriptions online on every
@@ -20,7 +20,7 @@ date: 2026-10-31
 - Every Provisioning PR passes a compatibility pipeline: resolve, static checks, a server boot
   test, and a diff comment. Code-level fixes go in a small `arffornia-patches` mixin jar.
 - `.mrpack` is exported from the lock as a release asset, for players on other launchers.
-- Details: [spec 009](../specs/009-modpack-lockfile-and-compatibility.md).
+- Details: [spec 014](../specs/014-modpack-lockfile-and-compatibility.md).
 
 ## Consequences
 - Reproducible packs, faster boots and launches, and API quotas used by CI only.

@@ -3,7 +3,7 @@ status: proposed
 date: 2026-10-31
 ---
 
-# 0013 · Player-facing messages are localized per player, at the last moment
+# 0014 · Player-facing messages are localized per player, at the last moment
 
 ## Context
 Brian asked why shop announcements are "translated by the mod" instead of the website. One
@@ -15,7 +15,7 @@ player's client language (`ServerPlayer#clientInformation().language()`), and a
 
 ## Decision (proposed)
 - **Fixed events** (a purchase, a vote, a milestone, "pending rewards"): the website or the
-  outbox event (ADR 0011) carries a **key and arguments**, for example
+  outbox event (ADR 0012) carries a **key and arguments**, for example
   `{"key":"chat.arffornia.shop.bought","args":{"player":"Notch","item":"shop.item.42"}}`.
   The mod sends `Component.translatable(...)`. Each client renders it from the mod's
   `en_us.json` / `fr_fr.json`, which ship with the mod on every client.

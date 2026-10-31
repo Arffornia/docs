@@ -3,7 +3,7 @@ status: Draft: needs decisions
 date: 2026-10-31
 ---
 
-# 008 · Arffornia ID: identity, passkeys and the login experience
+# 013 · Arffornia ID: identity, passkeys and the login experience
 
 ## Summary
 
@@ -18,7 +18,7 @@ Why not one identity provider for both? Only a Microsoft login can prove that so
 Minecraft. Every IdP would have to run the Xbox Live → XSTS → Minecraft profile chain in a
 custom extension. The website already does it and players never see a second login page.
 A shared IdP would add a hop and a failure point for no visible gain. See
-[ADR 0010](../decisions/0010-two-identity-planes.md).
+[ADR 0011](../decisions/0011-two-identity-planes.md).
 
 ## Goals / non-goals
 
@@ -171,7 +171,7 @@ They were not measured here; the spike below measures them.
 
 | # | Decision | Options | Default |
 |---|---|---|---|
-| D1 | Identity planes | two planes (players on the website, staff on the IdP) / one IdP for everything | **Two planes** (ADR 0010) |
+| D1 | Identity planes | two planes (players on the website, staff on the IdP) / one IdP for everything | **Two planes** (ADR 0011) |
 | D2 | Staff IdP | keep Keycloak + optimize / spike Pocket ID / spike Rauthy | **Keep Keycloak + optimize, Pocket ID spike** |
 | D3 | Staff second factor | passkey only / passkey or OTP / OTP mandatory (today) | **Passkey, OTP as fallback** |
 | D4 | Staff social login | Google + Microsoft / Microsoft only / none | **Google + Microsoft, with linking confirmation** |

@@ -20,7 +20,7 @@ wording here, as in public issues.
 | 2026-10-31 | Launcher | NixOS users need "open with AppImage runner"; no menu entry | Brian's own desktop | [launcher#75](https://github.com/Arffornia/Arffornia_Launcher_V.5.2/issues/75) → [launcher#76](https://github.com/Arffornia/Arffornia_Launcher_V.5.2/pull/76) | PR open |
 | 2026-10-31 | Proxy | The server-list MOTD was a fixed "Arffornia Network!" | No seasonal or fun lines; no way to edit it in git | [proxy#15](https://github.com/Arffornia/Arffornia_Proxy/issues/15) → [proxy#16](https://github.com/Arffornia/Arffornia_Proxy/pull/16), [provisioning#39](https://github.com/Arffornia/Arffornia_Provisioning/pull/39) | PR open |
 | 2026-10-31 | Proxy plugin | The plugin disables itself entirely when the vote config is missing | Any future feature (the MOTD) would vanish with it; the MOTD now registers first | [proxy#16](https://github.com/Arffornia/Arffornia_Proxy/pull/16) | PR open |
-| 2026-10-31 | Mod / website | Shop rewards are only noticed at join or through `/arffornia shop claim_reward`; there is no push | Purchases feel delayed | [ADR 0011](../decisions/0011-keep-laravel-add-outbox-events.md) | proposal |
+| 2026-10-31 | Mod / website | Shop rewards are only noticed at join or through `/arffornia shop claim_reward`; there is no push | Purchases feel delayed | [ADR 0012](../decisions/0012-keep-laravel-add-outbox-events.md) | proposal |
 
 Older findings live in the audits and in each repo's issues. This log starts with the wave 4
 research (2026-10-31).
