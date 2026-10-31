@@ -23,8 +23,10 @@ Bring every repo to a state where people and agents can work safely.
 
 ## M3 · Gameplay foundations
 
-- [ ] Recipes as a generated datapack with a real recipe type ([ADR-0006](decisions/0006-recipes-as-datapack.md))
-- [ ] Machine framework, then the first new machines
+Designed in the [specs](specs/index.md); each waits for the maintainer's decisions.
+
+- [ ] Recipes as a generated datapack with a real recipe type ([ADR-0006](decisions/0006-recipes-as-datapack.md), [spec 001](specs/001-recipes-datapack.md))
+- [ ] Machine framework, then the first new machines ([spec 002](specs/002-machine-framework.md), [spec 003](specs/003-machine-tier-plan.md))
 - [ ] Immersive-Engineering-style multiblocks with a futuristic, Satisfactory-like look
 - [ ] Per-PR preview servers and in-game automated playtests ([ADR-0007](decisions/0007-preview-environments.md))
 - [ ] Bilingual (EN/FR) website, launcher and mod
