@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: superseded   # by 0016 (fixed playtest slots), 2026-11-01
 date: 2026-10-29
 ---
 
