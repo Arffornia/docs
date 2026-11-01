@@ -432,10 +432,42 @@ Declined:
   10 % wider than the real font.
 - **MOTD:** line 2 of the server-list ping the title screen already makes for "Server online", with
   colour tags stripped, cached for the early window.
-- **Early window:** draws the MOTD, the status and the bar live; the stills bake them as sample text.
+- **Early window:** draws the eyebrow, the MOTD, the status, the bar and the disclaimer live (round 4b: the eyebrow and the disclaimer moved out of the baked overlay); the stills show them as sample text.
 
-Sources: assets repo, branch `feat/ui-round4` (`ui/directions/g-honeycomb-r4.html`, `ui/render-r4.mjs`,
+Sources: assets repo (Arffornia/Arffornia_Assets), branch `feat/ui-round4`, rounds 4 and 4b (`ui/directions/g-honeycomb-r4.html`, `ui/render-r4.mjs`,
 `early/window-line.html`, `early/check-sheet.py`, `early/line.mjs`); loading: `previews/` here.
+
+## Round 4b (2026-11-01): the crafting-table logo, a smaller splash
+
+Brian approved round 4 ("une très très bonne itération") and asked for micro-changes:
+
+- **The logo is the crafting table.** `profile/brand/crafting-table.png` (the same file as
+  `Crafting_Table.png` in the website and the launcher) now sits left of the wordmark on all three
+  screens. It replaces the drawn iso cube on the loading screen, which did not read as a logo.
+- **Title screen:** the logo is left of "ARFFORNIA", at the wordmark's cap height. The wordmark is
+  120 px instead of 132 px so the row keeps clear of the hex grid.
+- **Splash a bit smaller:** at most 380 px wide (was 460), two lines over 28 characters, cap height
+  never under 15 px. It is anchored 14 px further right, so it touches the "A" without covering it.
+- **Early window:** back to round 3's long lockup, logo then title in one row, with round 4's
+  banner treatment. Only the logo, the wordmark and the empty track are baked into the overlay. The
+  eyebrow, the MOTD line, the status and the disclaimer are drawn live by the provider, in the
+  language from `options.txt`, so no PNG carries text a player reads.
+
+| Title screen | Early window, round 4 (left) and 4b (right) |
+|---|---|
+| ![Title, round 4b](007-loading-and-title-screen/round4b/title.extruded.webp) | ![Early window, round 4 and 4b](007-loading-and-title-screen/round4b/early-window.before-after.webp) |
+
+![Loading, round 4b](007-loading-and-title-screen/round4b/loading.en.webp)
+
+Clips: [title, keyboard](007-loading-and-title-screen/round4b/title.keyboard.mp4) ·
+[loading](007-loading-and-title-screen/round4b/loading.en.mp4) ·
+[early window, 20 fps](007-loading-and-title-screen/round4b/early-window.20fps.mp4) ·
+[French loading still](007-loading-and-title-screen/round4b/loading.fr.webp).
+
+The **tile** question (D12) was not clear. The tiles are the hexagonal buttons (Play, Singleplayer,
+Options…), and D12 is only about their surface:
+
+![The same buttons in the three looks](007-loading-and-title-screen/round4b/tiles-explained.webp)
 
 ## Decisions needed
 
@@ -452,13 +484,13 @@ Sources: assets repo, branch `feat/ui-round4` (`ui/directions/g-honeycomb-r4.htm
 | D7 | Small "Mojang Studios" credit on the loading screen | (a) keep, small; (b) remove | **Decided: the Usage Guidelines disclaimer on every screen with the brand** (round 3); the title keeps the vanilla copyright line |
 | D10 | Early-window sheet size | (a) 1:1, 60 frames, now 480×288 cells in a 2880×2880 sheet (33 MB VRAM, round 4 framing fix); (b) 640×240, 30 frames at 10 fps logic, held 2 ticks (18 MB); (c) 427×240 upscaled (25 MB, soft) | **(a)** for the first build; switch to (b) if a low-end report shows a slow first frame |
 | D11 | Title background colour | (a) the night render graded to plum in the screen (no extra render); (b) a dedicated "launcher" look in the renderer | **(a)** now; (b) once the machine art direction is picked and the scene is re-rendered anyway |
-| D12 | Title tile treatment (round 4) | (a) extruded; (b) machined; (c) glass | **(a)**: reads as physical blocks next to the iso machines, the reviewer's pick, plain textures in game; glass needs a blur pass per tile and lowers text contrast |
-| D13 | Where the title splash's MOTD comes from | (a) line 2 of the server-list ping, cached to disk; fallback: the bundled everyday quotes of `motd.yml`; (b) a website endpoint | **(a)**: no new service, same text as the Multiplayer list, `motd.yml` stays the only source |
-| D14 | Splash colour | (a) vanilla yellow, MOTD colour tags stripped; (b) keep the MOTD's colours | **(a)**: the yellow is what makes it read as the vanilla splash; MOTD colours are tuned for the server list |
-| D15 | Splash size | (a) at most 460 px wide, two lines over 28 characters, cap height ≥ 18 px; (b) vanilla's scale only | **(a)**: at 1080p vanilla's scale gives a ~600 px diagonal across the menu (review) |
-| D16 | Variety on the loading screen | (a) "Did you know?" card, one machine close-up per tip, 8 s each, Night Shift scene unchanged; (b) the main camera visits each machine as it powers on; (c) text tips only | **(a)**: variety without touching the scene Brian wants kept; (b) would change Night Shift |
-| D17 | Keyboard navigation | (a) spatial (nearest tile within ±60°, upper on a tie), Play pre-selected, hover and keys share one selection; (b) a fixed ring order | **(a)**: arrows go where the tile is; works for any future tile layout |
-| D18 | Early-window line under the title | (a) the MOTD cached by the last title screen, the banner tagline on first launch; (b) the tagline always | **(a)**: same message as the title splash and the server list, no network before Minecraft starts |
+| D12 | Title tile treatment (round 4) | (a) extruded; (b) machined; (c) glass | **Open: re-asked with a picture (round 4b).** Default **(a)**: reads as physical blocks next to the iso machines, the reviewer's pick, plain textures in game; glass needs a blur pass per tile and lowers text contrast |
+| D13 | Where the title splash's MOTD comes from | (a) line 2 of the server-list ping, cached to disk; (b) a website endpoint | **Decided (round 4b): (a).** No copy of the MOTD ships in the mod: with no cache yet, the splash shows the banner tagline (same rule as D18). `motd.yml` in Provisioning stays the only source |
+| D14 | Splash colour | (a) vanilla yellow, MOTD colour tags stripped; (b) keep the MOTD's colours | **Decided (round 4b): (a)**: the yellow is what makes it read as the vanilla splash; MOTD colours are tuned for the server list |
+| D15 | Splash size | (a) at most 460 px wide, two lines over 28 characters; (b) vanilla's scale only | **Decided (round 4b): (a), set to 380 px** after "le MOTD est peut-être un poil gros" (cap height ≥ 15 px): at 1080p vanilla's scale gives a ~600 px diagonal across the menu (review) |
+| D16 | Variety on the loading screen | (a) "Did you know?" card, one machine close-up per tip, 8 s each, Night Shift scene unchanged; (b) the main camera visits each machine as it powers on; (c) text tips only | **Decided (round 4b): (a)**: variety without touching the scene Brian wants kept; (b) would change Night Shift |
+| D17 | Keyboard navigation | (a) spatial (nearest tile within ±60°, upper on a tie), Play pre-selected, hover and keys share one selection; (b) a fixed ring order | **Decided (round 4b): (a)**: arrows go where the tile is; works for any future tile layout |
+| D18 | Early-window line under the title | (a) the MOTD cached by the last title screen, the banner tagline on first launch; (b) the tagline always | **Decided (round 4b): (a)**: same message as the title splash and the server list, no network before Minecraft starts |
 | D8 | UI test cadence | (a) label `ui` + nightly; (b) every PR | **(a)**, as in 004 |
 
 ## Work breakdown

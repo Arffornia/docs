@@ -117,9 +117,13 @@
   // ------------------------------------------------------------ DOM helpers
   const $ = (sel) => document.querySelector(sel);
   function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
+  // round 4b (Brian): the brand logo is the crafting table (profile/brand/crafting-table.png, the same file
+  // as Crafting_Table.png on the website and the launcher), not the drawn iso cube (A.drawEmblem, kept unused)
+  const LOGO = new URL('../../../../profile/brand/crafting-table.png', document.baseURI).href;
   function emblem(size, th) {
-    const c = el('canvas', 'emblem'); const dpr = window.devicePixelRatio || 1; c.width = size * dpr; c.height = size * dpr; c.style.width = size + 'px'; c.style.height = size + 'px';
-    const ctx = c.getContext('2d'); ctx.scale(dpr, dpr); A.drawEmblem(ctx, size, th, 0); return c;
+    const im = el('img', 'emblem'); im.src = LOGO; im.alt = ''; im.width = size; im.height = size;
+    im.style.width = size + 'px'; im.style.height = size + 'px'; im.style.filter = 'drop-shadow(0 3px 8px rgba(0,0,0,.45))';
+    return im;
   }
   const diamond = '<i class="dia"></i>';
 
@@ -321,7 +325,7 @@
     A.renderScene(ctx, innerWidth, innerHeight, dpr, th, t, view.cam);
     view.frame(t);
   };
-  window.READY = document.fonts.ready.then(() => { view.build(hud, th); window.renderFrame(0); return true; });
+  window.READY = document.fonts.ready.then(() => { view.build(hud, th); return Promise.all([...hud.querySelectorAll('img')].map((i) => i.decode().catch(() => {}))); }).then(() => { window.renderFrame(0); return true; });
   const freeze = qs.get('t');
   window.READY.then(() => {
     if (freeze !== null) { window.renderFrame(parseFloat(freeze)); document.body.classList.add('frozen'); return; }
