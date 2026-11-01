@@ -53,6 +53,17 @@
     'gui.arffornia.title.news.headline': { en: 'The Foundry arrives in Tier 3', fr: 'La Fonderie arrive au palier 3' },
     'gui.arffornia.title.news.body': { en: 'First multiblock: steel, invar and bronze alloys.', fr: `Premier multibloc${NB}: alliages d’acier, d’invar et de bronze.` },
     'gui.arffornia.title.version': { en: 'Arffornia 1.0.25 · Minecraft 1.21.1 · NeoForge 21.1.172 · 331 mods', fr: 'Arffornia 1.0.25 · Minecraft 1.21.1 · NeoForge 21.1.172 · 331 mods' },
+    'gui.arffornia.loading.dyk.label': { en: 'Did you know?', fr: `Le saviez-vous${NB}?` },
+    'gui.arffornia.machine.miner': { en: 'Miner', fr: 'Foreuse' },
+    'gui.arffornia.machine.smelter': { en: 'Smelter', fr: 'Fonderie simple' },
+    'gui.arffornia.machine.constructor': { en: 'Constructor', fr: 'Constructeur' },
+    'gui.arffornia.machine.foundry': { en: 'Foundry', fr: 'Fonderie' },
+    'gui.arffornia.machine.elevator': { en: 'Space Elevator', fr: 'Ascenseur spatial' },
+    'gui.arffornia.loading.dyk.miner': { en: 'A miner on an ore node never runs dry. Build the line around it, not the other way round.', fr: 'Une foreuse sur un filon ne s’épuise jamais. Construisez la ligne autour d’elle.' },
+    'gui.arffornia.loading.dyk.smelter': { en: 'Smelters stop when their output is full. A belt out is worth more than a faster smelter.', fr: 'Une fonderie s’arrête quand sa sortie est pleine. Un convoyeur vaut mieux qu’une fonderie plus rapide.' },
+    'gui.arffornia.loading.dyk.constructor': { en: 'Constructors press ingots into plates and rods, the parts every tier asks for.', fr: 'Le constructeur presse les lingots en plaques et en tiges, les pièces de chaque palier.' },
+    'gui.arffornia.loading.dyk.foundry': { en: 'The Foundry is your first multiblock: steel, invar and bronze, from tier 3.', fr: `La Fonderie est votre premier multibloc${NB}: acier, invar et bronze, dès le palier 3.` },
+    'gui.arffornia.loading.dyk.elevator': { en: 'Each Space Elevator delivery unlocks the next tier. Press G to see what it needs.', fr: 'Chaque livraison à l’ascenseur spatial débloque le palier suivant. Appuyez sur G pour voir ce qu’il faut.' },
     'title.credits': { en: 'Copyright Mojang AB. Do not distribute!', fr: 'Copyright Mojang AB. Do not distribute!' },
   };
   I18N['gui.arffornia.title.next'].fr = `Prochaine livraison${NB}: %s plaques renforcées`;
@@ -116,7 +127,7 @@
   const V = {};
 
   V['loading-a'] = {
-    theme: 'night', cam: { cx: 12.6, cy: 2.2, cz: 2.4, scale: 1 / 22, fx: 0.53, fy: 0.37, timeline: (t) => loadingTimeline(t) },
+    theme: 'night', cam: { cx: 12.6, cy: 2.2, cz: 2.4, scale: 1 / 22, fx: 0.53, fy: 0.405, /* round 4: 25 px lower, the miner's roof cleared the stage tracker */ timeline: (t) => loadingTimeline(t) },
     build(root, th) {
       root.innerHTML = `
         <div class="la-top">
@@ -124,19 +135,50 @@
           <div class="tip"><b></b><span></span></div>
         </div>
         <div class="la-bottom">
-          <div class="brand"><div class="em"></div><div><div class="word">ARFFORNIA</div><div class="sub"></div></div></div>
+          <div class="brand"><div class="em"></div><div class="stack"><div class="word">ARFFORNIA</div><div class="sub"></div></div></div>
           <div class="status">
             <div class="row"><div><div class="stage"></div><div class="detail"></div></div><div class="pct"><span></span><small>%</small></div></div>
             <div class="bar"><i class="fill"></i><i class="head"></i></div>
             <div class="meta"><span class="mem"></span><span>Minecraft 1.21.1 · NeoForge 21.1.172</span><span class="moj">Mojang Studios</span></div>
           </div>
         </div>
+        <div class="dyk"><canvas></canvas><span class="name"></span><div class="txt"><div class="lab"><span></span><span class="dots"></span></div><p></p></div></div>
         <div class="phase"></div>`;
-      $('.em').appendChild(emblem(58, th)); $('.sub').textContent = tr('gui.arffornia.brand.tagline');
+      $('.em').appendChild(emblem(58, th));
+      DYK.forEach(() => { const i = el('i'); i.appendChild(el('b')); $('.dyk .dots').appendChild(i); }); $('.sub').textContent = tr('gui.arffornia.brand.tagline');
       const pips = $('.pips'); ['java', 'mods', 'content', 'resources', 'ready'].forEach((k, i) => { if (i) pips.appendChild(el('i', 'link')); const p = el('div', 'pip'); p.innerHTML = `${diamond}<span>${tr('gui.arffornia.loading.pip.' + k)}</span>`; pips.appendChild(p); });
     },
-    frame(t) { hudLoading(t); },
+    frame(t) { hudLoading(t); hudDyk(t, th); },
   };
+
+  // round 4: "Did you know?" card. Each tip comes with a close-up of the machine it talks about,
+  // drawn by the same engine at its own clock, so the card never repeats the big scene's framing.
+  const DYK = [
+    { m: 'miner', at: [0.3, 2.5, 2], z: 1.3, k: 'miner' },
+    { m: 'smelter', at: [5.5, 2.5, 2], z: 1.2, k: 'smelter' },
+    { m: 'constructor', at: [10.5, 2.5, 2], z: 1.2, k: 'constructor' },
+    { m: 'foundry', at: [11.2, -2.9, 3], z: 1.2, k: 'foundry' },
+    { m: 'elevator', at: [22.5, 2.0, 3], z: 4.0, k: 'elevator' },
+  ];
+  const DYK_PERIOD = Number(qs.get('dyk') || 4.6); // in game: 8 s per tip (spec 007 round 4); shortened for the 14 s clip
+  function hudDyk(t, th) {
+    const card = $('.dyk'); if (!card) return;
+    const n = Math.floor(t / DYK_PERIOD) % DYK.length, k = A.fract(t / DYK_PERIOD), d = DYK[n];
+    const a = A.smooth(0, 0.07, k) * (1 - A.smooth(0.94, 1, k));
+    const cv = card.querySelector('canvas'); const dpr = window.devicePixelRatio || 1; const w = 320, h = 136;
+    if (cv.width !== w * dpr) { cv.width = w * dpr; cv.height = h * dpr; }
+    const ctx = cv.getContext('2d');
+    const tall = d.m === 'elevator';
+    A.renderScene(ctx, w, h, dpr, th, 20 + t, { cx: d.at[0] + d.at[2] / 2, cy: d.at[1] + d.at[2] / 2, cz: d.z, scale: (tall ? 1 / 10.5 : 1 / 4.1) * (1 + 0.05 * k), fx: 0.5, fy: tall ? 0.52 : 0.7, silhouettes: false, drift: false, only: d.m });
+    // review: a vignette so the machine reads as a close-up, not a crop of the big scene
+    { const g = ctx.createRadialGradient(cv.width / 2, cv.height * 0.55, cv.height * 0.25, cv.width / 2, cv.height * 0.55, cv.width * 0.62); g.addColorStop(0, 'rgba(10,16,20,0)'); g.addColorStop(1, 'rgba(10,16,20,0.85)'); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = g; ctx.fillRect(0, 0, cv.width, cv.height); }
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = `rgba(10,16,20,${(1 - a).toFixed(3)})`; ctx.fillRect(0, 0, cv.width, cv.height);
+    card.querySelector('.name').textContent = tr('gui.arffornia.machine.' + d.k);
+    card.querySelector('.lab span').textContent = tr('gui.arffornia.loading.dyk.label');
+    const p = card.querySelector('p'); p.textContent = tr('gui.arffornia.loading.dyk.' + d.k); p.style.opacity = a.toFixed(3);
+    card.querySelectorAll('.dots i').forEach((dot, i) => { dot.classList.toggle('done', i < n); dot.classList.toggle('on', i === n); dot.querySelector('b').style.width = (i === n ? k * 100 : 0) + '%'; });
+    card.style.opacity = A.smooth(0.3, 0.9, t).toFixed(3);
+  }
 
   V['loading-b'] = {
     theme: 'maquette', cam: { cx: 12.6, cy: 2.0, cz: 2.4, scale: 1 / 22.5, fx: 0.5, fy: 0.41, timeline: (t) => loadingTimeline(t) },

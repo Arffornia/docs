@@ -638,14 +638,16 @@
     if (cam.silhouettes !== false) drawSilhouettes(R);
     drawFloor(R, 11, 2, 22);
     const { cv, M } = LINE;
+    // cam.only: draw one machine alone (round 4 "Did you know?" close-ups); belts and items stay, they carry its product
+    const want = (n) => !cam.only || cam.only === n;
     drawShadows(R, [
-      [M.miner.x, M.miner.y, 2, 2, 2.9], [M.smelter.x, M.smelter.y, 2, 2, 3.0], [M.constructor.x, M.constructor.y, 2, 2, 3.0],
-      [M.foundry.x, M.foundry.y, 3, 3, 2.6], [M.assembler.x, M.assembler.y, 3, 3, 2.2], [M.elevator.x, M.elevator.y, 3, 3, 8.6],
-    ]);
+      ['miner', M.miner.x, M.miner.y, 2, 2, 2.9], ['smelter', M.smelter.x, M.smelter.y, 2, 2, 3.0], ['constructor', M.constructor.x, M.constructor.y, 2, 2, 3.0],
+      ['foundry', M.foundry.x, M.foundry.y, 3, 3, 2.6], ['assembler', M.assembler.x, M.assembler.y, 3, 3, 2.2], ['elevator', M.elevator.x, M.elevator.y, 3, 3, 8.6],
+    ].filter((a) => want(a[0])).map((a) => a.slice(1)));
     R.t = tl ? tl.bt : t; R.curPower = 1;
     Object.values(cv).forEach((c) => { for (let i = 0; i < Math.ceil(c.len); i++) beltSegment(R, c, i); beltItems(R, c); });
-    use('miner'); miner(R, M.miner); use('smelter'); smelter(R, M.smelter, cv.c1); use('constructor'); constructor_(R, M.constructor, cv.c2);
-    use('foundry'); foundry(R, M.foundry); use('assembler'); assembler(R, M.assembler, cv.c3); use('elevator'); elevator(R, M.elevator, cv.c5);
+    if (want('miner')) { use('miner'); miner(R, M.miner); } if (want('smelter')) { use('smelter'); smelter(R, M.smelter, cv.c1); } if (want('constructor')) { use('constructor'); constructor_(R, M.constructor, cv.c2); }
+    if (want('foundry')) { use('foundry'); foundry(R, M.foundry); } if (want('assembler')) { use('assembler'); assembler(R, M.assembler, cv.c3); } if (want('elevator')) { use('elevator'); elevator(R, M.elevator, cv.c5); }
     R.t = t; R.curPower = 1;
     if (tl) { // power-on flashes and the final launch
       const tops = { miner: [M.miner.x + 1, M.miner.y + 1, 3.0], smelter: [M.smelter.x + 1, M.smelter.y + 1, 2.0], constructor: [M.constructor.x + 1, M.constructor.y + 1, 2.4], foundry: [M.foundry.x + 1.5, M.foundry.y + 1.5, 2.6], assembler: [M.assembler.x + 1.5, M.assembler.y + 1.5, 2.0], elevator: [M.elevator.x + 1.5, M.elevator.y + 1.5, 8.6] };
