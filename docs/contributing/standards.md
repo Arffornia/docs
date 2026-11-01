@@ -2,6 +2,18 @@
 
 Short on purpose. If a rule is missing, follow what the code around you does and say so in the PR.
 
+## Repo names
+
+| Kind | Pattern | Examples |
+|---|---|---|
+| Arffornia projects | `Arffornia_<Name>` | `Arffornia_Website`, `Arffornia_Mods`, `Arffornia_Assets`, `Arffornia_Playtest` |
+| Shared libraries | `Nexus_<Name>` | `Nexus_Java`, `Nexus_Mods`, `Nexus_Logger`, `Nexus_Saver` |
+| Existing exceptions, kept as they are | as is | `docs`, `agent-kit`, `ops`, `.github`, `keycloak-theme-arffornia`, `minecraft-oauth` |
+
+New repos follow the first two patterns, with PascalCase words joined by `_`. Never rename an
+existing repo: links, releases and npm or Maven coordinates depend on the name. Brian creates
+repos; agents propose the name in a spec or issue.
+
 ## Every repo has
 
 | File | Purpose |
