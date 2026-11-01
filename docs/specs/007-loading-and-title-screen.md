@@ -358,12 +358,123 @@ re-rendered by the same commands, with no manual step.
 Sources: assets repo `ui/directions/f-honeycomb-launcher.html`, `early/line.mjs`,
 `early/overlay-line.html`, `early/EarlySpriteProbe.java` (slot and overlay arguments).
 
+## Round 4 (2026-11-01): banner wordmark, MOTD splash, depth, keyboard, Night Shift is back
+
+Brian's notes on round 3, and what changed:
+
+- **Title screen.** The Honeycomb layout and the launcher palette stay. The wordmark block is now the
+  org banner's (`scripts/profile_banner.py`): Chakra Petch, the eyebrow "MODDED MINECRAFT · NEOFORGE
+  1.21.1" in `#ffb36b`, "ARFFORNIA" in the `#ffb36b → #e0703c` gradient, and the banner's tagline.
+  The **MOTD** sits on the wordmark's corner as **vanilla's yellow splash**: `#FFFF00` with its `#3F3F00`
+  shadow, −20°, and the `SplashRenderer` pulse (`1.8 − |sin(2π·ms/1000)|·0.1`).
+- **Tile depth.** Three treatments: *machined* (bevelled rim, brushed noise, chamfer line),
+  *glass* (blurred factory behind, sheen) and *extruded* (machined plus a visible thickness and a
+  drop shadow; the selected tile rises). A faint film grain covers the whole frame. The background
+  slides a few pixels against the selection, which adds parallax.
+- **Keyboard.** Play is selected when the screen opens and Enter activates it. The arrow keys move the
+  orange selector to the neighbouring tile: the nearest tile centre within ±60° of the arrow, and the
+  upper one on a tie. The selector slides there (240 ms, ease-out-back), grows to 1.04 and squashes to
+  0.97 on Enter. Mouse hover moves the same selector, and the cursor hides on the first key press.
+  Play keeps an orange rim when it is not selected.
+- **Loading screen.** Back to **Night Shift** (round 1, A), unchanged except for the banner's title
+  colours and eyebrow, and a **"Did you know?" card**. Each tip comes with a close-up of the machine it
+  talks about. The engine draws that machine alone (`cam.only`), with its belts and products, so the card
+  never repeats the big scene. One tip shows every 8 s in game (4.6 s in the 14 s clip). The card has a
+  fixed height of three lines, and progress dashes.
+- **Early window.** It was cut across the middle: the 640×240 sheet cell was smaller than the line
+  (424×269 px over the loop, sitting 44 px below the camera target), so every frame lost about 60 px at
+  the bottom. That was a framing bug, not a GL texture limit. The cell is now 480×288 with the line
+  centred. `early/check-sheet.py` fails the build when any frame touches its cell edge, or when the
+  sheet is wider than 4096 px. The sheet is 2880×2880 (33 MB) and a tick takes 8.5 ms on llvmpipe.
+  The title has the banner treatment, the MOTD line sits under it, and the bar fill is the banner
+  gradient.
+
+| Title, extruded tiles (default) | Selection moved with the keyboard |
+|---|---|
+| ![Title, extruded](007-loading-and-title-screen/round4/title.extruded.webp) | ![Selection on Mods](007-loading-and-title-screen/round4/title.extruded.selected-mods.webp) |
+| **Machined** | **Glass** |
+| ![Title, machined](007-loading-and-title-screen/round4/title.machined.webp) | ![Title, glass](007-loading-and-title-screen/round4/title.glass.webp) |
+
+Clip: [keyboard and mouse navigation, 10 s](007-loading-and-title-screen/round4/title.keyboard.mp4). The
+keycap in its corner is a demo overlay, not part of the game.
+
+![Loading, Night Shift with the Did you know card](007-loading-and-title-screen/round4/loading.en.webp)
+
+Clip: [loading, 14 s](007-loading-and-title-screen/round4/loading.en.mp4) ·
+[French still](007-loading-and-title-screen/round4/loading.fr.webp) · live page:
+[previews/loading-a.html](007-loading-and-title-screen/previews/loading-a.html) (`?dyk=8` for the in-game tip period).
+
+![Early window, round 3 (left, cut) and round 4 (right)](007-loading-and-title-screen/round4/early-window.before-after.webp)
+
+Clip: [early window at 20 fps](007-loading-and-title-screen/round4/early-window.20fps.mp4).
+
+**Independent review.** A fresh-context Opus session, briefed as a senior UI/game art director, got
+only the renders and Brian's goals. Applied:
+
+- a stronger left scrim behind the tagline;
+- Play marked when unselected, with its render on a dark disc;
+- selector scale and press timings, a scale-and-fade intro instead of the rotating settle;
+- larger keycaps;
+- the splash capped at 460 px and split in two over 28 characters, never under an 18 px cap height;
+- close-ups instead of crops in the card, with a fixed card height and visible dashes;
+- the loading scene 25 px lower, so the miner clears the stage tracker;
+- the early window recentred, with a readable disclaimer.
+
+Declined:
+
+- a plum vignette on the loading screen (Brian asked to keep Night Shift as it is);
+- moving the copyright line bottom-left (vanilla keeps it bottom-right);
+- a separate subject for the title background. That one is D11(b), after the machine remake.
+
+**How it ships in game.**
+- **Tiles:** pre-baked textures (plate, rim, side, selector) drawn with `blit`; no shader per tile.
+- **Splash:** the vanilla font renderer. The mock-ups use Monocraft (OFL) as a stand-in, and it runs about
+  10 % wider than the real font.
+- **MOTD:** line 2 of the server-list ping the title screen already makes for "Server online", with
+  colour tags stripped, cached for the early window.
+- **Early window:** draws the eyebrow, the MOTD, the status, the bar and the disclaimer live (round 4b: the eyebrow and the disclaimer moved out of the baked overlay); the stills show them as sample text.
+
+Sources: assets repo (Arffornia/Arffornia_Assets), branch `feat/ui-round4`, rounds 4 and 4b (`ui/directions/g-honeycomb-r4.html`, `ui/render-r4.mjs`,
+`early/window-line.html`, `early/check-sheet.py`, `early/line.mjs`); loading: `previews/` here.
+
+## Round 4b (2026-11-01): the crafting-table logo, a smaller splash
+
+Brian approved round 4 ("une très très bonne itération") and asked for micro-changes:
+
+- **The logo is the crafting table.** `profile/brand/crafting-table.png` (the same file as
+  `Crafting_Table.png` in the website and the launcher) now sits left of the wordmark on all three
+  screens. It replaces the drawn iso cube on the loading screen, which did not read as a logo.
+- **Title screen:** the logo is left of "ARFFORNIA", at the wordmark's cap height. The wordmark is
+  120 px instead of 132 px so the row keeps clear of the hex grid.
+- **Splash a bit smaller:** at most 380 px wide (was 460), two lines over 28 characters, cap height
+  never under 15 px. It is anchored 14 px further right, so it touches the "A" without covering it.
+- **Early window:** back to round 3's long lockup, logo then title in one row, with round 4's
+  banner treatment. Only the logo, the wordmark and the empty track are baked into the overlay. The
+  eyebrow, the MOTD line, the status and the disclaimer are drawn live by the provider, in the
+  language from `options.txt`, so no PNG carries text a player reads.
+
+| Title screen | Early window, round 4 (left) and 4b (right) |
+|---|---|
+| ![Title, round 4b](007-loading-and-title-screen/round4b/title.extruded.webp) | ![Early window, round 4 and 4b](007-loading-and-title-screen/round4b/early-window.before-after.webp) |
+
+![Loading, round 4b](007-loading-and-title-screen/round4b/loading.en.webp)
+
+Clips: [title, keyboard](007-loading-and-title-screen/round4b/title.keyboard.mp4) ·
+[loading](007-loading-and-title-screen/round4b/loading.en.mp4) ·
+[early window, 20 fps](007-loading-and-title-screen/round4b/early-window.20fps.mp4) ·
+[French loading still](007-loading-and-title-screen/round4b/loading.fr.webp).
+
+The **tile** question (D12) was not clear. The tiles are the hexagonal buttons (Play, Singleplayer,
+Options…), and D12 is only about their surface:
+
+![The same buttons in the three looks](007-loading-and-title-screen/round4b/tiles-explained.webp)
+
 ## Decisions needed
 
 | # | Question | Options | Recommendation |
 |---|---|---|---|
-| D1 | Loading screen look (scene) | (a) A · Night Shift; (b) B · Maquette; (c) mix | **(a)**: emissive power-on reads best; B's palette fits the launcher and website light theme |
-| D1b | UI direction over the scene (round 2) | A Honeycomb; B Drafting sheet; C Launcher continuity; D Shift board; E Model studio; or a mix | **Decided (round 3): A Honeycomb layout in C's launcher colours**, for title and loading |
+| D1 | Loading screen look (scene) | (a) A · Night Shift; (b) B · Maquette; (c) mix | **Decided (round 4): (a) Night Shift**, unchanged, with the banner's title colours and the D16 card |
+| D1b | UI direction over the scene (round 2) | A Honeycomb; B Drafting sheet; C Launcher continuity; D Shift board; E Model studio; or a mix | **Decided (round 3): A Honeycomb layout in C's launcher colours**; from round 4 for the title screen only (loading is D1) |
 | D2 | Title screen layout (round 1) | (a) A · Control Room; (b) B · Maquette Hero | superseded by D1b |
 | D3 | How to take over the early window | (a) own provider jar; (b) keep Drippy + FancyMenu; (c) Simple Custom Early Loading + APNG | **Decided (round 3): (a), 20 fps, showing the assembly line** |
 | D9 | Web-rendered menus | (a) native screens, TesseraUI for menus/GUIs; (b) MCEF/WebGUI for all menus; (c) MCEF only for content pages | **(a)** |
@@ -371,8 +482,15 @@ Sources: assets repo `ui/directions/f-honeycomb-launcher.html`, `early/line.mjs`
 | D5 | Third-party art currently shipped in `config/fancymenu/assets` | (a) remove now; (b) keep until replaced | **(a)** |
 | D6 | Which machines appear before their models exist | (a) tiers 0–3 as teasers, mocks replaced as 005 models land; (b) only released machines | **(a)** |
 | D7 | Small "Mojang Studios" credit on the loading screen | (a) keep, small; (b) remove | **Decided: the Usage Guidelines disclaimer on every screen with the brand** (round 3); the title keeps the vanilla copyright line |
-| D10 | Early-window sheet size | (a) 640×240 1:1, 60 frames (37 MB VRAM); (b) 640×240, 30 frames at 10 fps logic, held 2 ticks (18 MB); (c) 427×240 upscaled (25 MB, soft) | **(a)** for the first build; switch to (b) if a low-end report shows a slow first frame |
+| D10 | Early-window sheet size | (a) 1:1, 60 frames, now 480×288 cells in a 2880×2880 sheet (33 MB VRAM, round 4 framing fix); (b) 640×240, 30 frames at 10 fps logic, held 2 ticks (18 MB); (c) 427×240 upscaled (25 MB, soft) | **(a)** for the first build; switch to (b) if a low-end report shows a slow first frame |
 | D11 | Title background colour | (a) the night render graded to plum in the screen (no extra render); (b) a dedicated "launcher" look in the renderer | **(a)** now; (b) once the machine art direction is picked and the scene is re-rendered anyway |
+| D12 | Title tile treatment (round 4) | (a) extruded; (b) machined; (c) glass | **Open: re-asked with a picture (round 4b).** Default **(a)**: reads as physical blocks next to the iso machines, the reviewer's pick, plain textures in game; glass needs a blur pass per tile and lowers text contrast |
+| D13 | Where the title splash's MOTD comes from | (a) line 2 of the server-list ping, cached to disk; (b) a website endpoint | **Decided (round 4b): (a).** No copy of the MOTD ships in the mod: with no cache yet, the splash shows the banner tagline (same rule as D18). `motd.yml` in Provisioning stays the only source |
+| D14 | Splash colour | (a) vanilla yellow, MOTD colour tags stripped; (b) keep the MOTD's colours | **Decided (round 4b): (a)**: the yellow is what makes it read as the vanilla splash; MOTD colours are tuned for the server list |
+| D15 | Splash size | (a) at most 460 px wide, two lines over 28 characters; (b) vanilla's scale only | **Decided (round 4b): (a), set to 380 px** after "le MOTD est peut-être un poil gros" (cap height ≥ 15 px): at 1080p vanilla's scale gives a ~600 px diagonal across the menu (review) |
+| D16 | Variety on the loading screen | (a) "Did you know?" card, one machine close-up per tip, 8 s each, Night Shift scene unchanged; (b) the main camera visits each machine as it powers on; (c) text tips only | **Decided (round 4b): (a)**: variety without touching the scene Brian wants kept; (b) would change Night Shift |
+| D17 | Keyboard navigation | (a) spatial (nearest tile within ±60°, upper on a tie), Play pre-selected, hover and keys share one selection; (b) a fixed ring order | **Decided (round 4b): (a)**: arrows go where the tile is; works for any future tile layout |
+| D18 | Early-window line under the title | (a) the MOTD cached by the last title screen, the banner tagline on first launch; (b) the tagline always | **Decided (round 4b): (a)**: same message as the title splash and the server list, no network before Minecraft starts |
 | D8 | UI test cadence | (a) label `ui` + nightly; (b) every PR | **(a)**, as in 004 |
 
 ## Work breakdown
