@@ -107,5 +107,6 @@ nav:
       - 013 Arffornia ID: specs/013-arffornia-id.md
       - 014 Modpack lockfile and compatibility: specs/014-modpack-lockfile-and-compatibility.md
       - 015 Launcher Play speed: specs/015-launcher-play-speed.md
+      - 016 Testable build: specs/016-testable-build/spec.md
   - Roadmap: roadmap.md
   - Glossary: glossary.md
