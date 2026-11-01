@@ -18,6 +18,7 @@ are answered, its tasks become `agent-ready` issues.
 | [013](013-arffornia-id.md) | Arffornia ID: identity, passkeys and the login experience | Platform | Draft: needs decisions | D1–D7 |
 | [014](014-modpack-lockfile-and-compatibility.md) | Modpack lockfile and mod-compatibility pipeline | Platform | Draft: needs decisions | D1–D5 |
 | [015](015-launcher-play-speed.md) | Launcher speed, from Play to the game window | Platform | Draft: needs decisions | D1–D4 |
+| [016](016-testable-build/spec.md) | Testable build: beta launcher, staging, `playtest up <pr>` | Platform | Draft: needs decisions | D1–D15 |
 
 Specs 004–006 are in an open PR ([#1](https://github.com/Arffornia/docs/pull/1)).
 
