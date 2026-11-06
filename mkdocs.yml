@@ -92,6 +92,7 @@ nav:
       - 0013 Modpack lockfile: decisions/0013-modpack-lockfile.md
       - 0014 Localize per player: decisions/0014-localize-per-player.md
       - 0015 Free signing and updates: decisions/0015-free-signing-and-updates.md
+      - 0016 Playtest slots: decisions/0016-playtest-slots.md
       - Template: decisions/template.md
   - Specs:
       - specs/index.md
