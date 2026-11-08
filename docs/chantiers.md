@@ -9,7 +9,7 @@ that one is a batch of PRs that Brian approves at once. An initiative holds many
 
 | Initiative | In one line | Status |
 |---|---|---|
-| [Game design: Arffornia as the progression mod](https://github.com/Arffornia/docs/issues/27) | The mod becomes the hub of the pack: modules on an Arffornia crafting table unlock other mods, built from huge production lines | study next |
+| [Game design: Arffornia as the progression mod](https://github.com/Arffornia/docs/issues/27) | The mod becomes the hub of the pack: paliers of steps per mod, Noyau modules built by Arffornia chains that consume several mods | direction decided |
 | [Progression graph tooling](https://github.com/Arffornia/docs/issues/28) | Extract every recipe, generate the graph, prove each milestone is reachable, AI skill on top of static checks | not started |
 | [Gating engine](https://github.com/Arffornia/docs/issues/29) | Synced stages, machines bound to a progression, recipes as a datapack with hot reload | decisions taken |
 | [Machines and multiblocks](https://github.com/Arffornia/docs/issues/30) | Machine framework, fixed and variable multiblocks with hologram, 3D pipeline, first Smelter | 3D pipeline running |
@@ -18,3 +18,20 @@ that one is a batch of PRs that Brian approves at once. An initiative holds many
 | [Rewards and engagement](https://github.com/Arffornia/docs/issues/33) | Typed rewards over an API, kits, ranks, lucky boxes, daily streaks | decisions taken |
 | [Cosmetics and pets](https://github.com/Arffornia/docs/issues/34) | Own hats, clothes and pets from a 3D pipeline | not started |
 | [Platform and ops](https://github.com/Arffornia/docs/issues/35) | Prod release, observability, security fixes, test environments | in progress |
+
+## Order of work (decided 2026-11-08)
+
+Specify and prove first, build second, generate the graph last, so nothing is redone.
+
+| Phase | Work | Initiatives | Depends on |
+|---|---|---|---|
+| 1 · Specs and proofs | Progression model and its API ([spec 017](specs/017-progression-model.md)) | #29, #28 | game design decisions |
+| | UI framework spec and an in-game web UI prototype (performance, macOS, Linux) | #32 | spec 017 for the graph data |
+| | Gating prototype in the mod: ingredient gate, crafting lock, datapack and hot reload | #29 | spec 017, spec 001 |
+| | Recipe extraction spike: measure the real size of the graph | #28 | none |
+| 2 · Build | UI framework, then the graph viewer and editor, same on the website and in game, with tests | #32 | phase 1 |
+| | Gating engine and the new progression API | #29 | phase 1 |
+| | Machine framework and multiblocks, first Smelter | #30 | gating prototype |
+| 3 · Discovery | Full recipe extraction, lint and proofs, AI skill that turns the current tree into per-mod tracks | #28 | phase 2 |
+
+Independent at any time: concept rounds for machines (3D pipeline), rewards (#33), cosmetics (#34), platform (#35).
