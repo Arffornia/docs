@@ -74,3 +74,15 @@ cards:
       - "Q2 Website API for previews: stub, shared staging or per-PR instance."
       - "Q3 Release channels: keep main as production, or add a stable tag and treat main as staging."
       - "Prerequisite: per-namespace Vault roles (G4), or previews could read every Arffornia secret."
+
+hidden_annotations:
+  G1: not on this flow; drawn in the runtime, tech-stack views
+  G3: not on this flow; drawn in the player-login, runtime, tech-stack, vote-and-reward views
+  G4: not on this flow; drawn in the runtime, tech-stack views
+  G6: not on this flow; drawn in the runtime, tech-stack views
+  G7: not on this flow; drawn in the content-delivery, tech-stack views
+  G8: not on this flow; drawn in the content-delivery, player-login, tech-stack views
+  G9: not on this flow; drawn in the content-delivery, tech-stack views
+  G10: not on this flow; drawn in the content-delivery, tech-stack views
+  G11: not on this flow; drawn in the content-delivery, tech-stack views
+  G12: not on this flow; drawn in the runtime, tech-stack, vote-and-reward views

@@ -114,3 +114,10 @@ cards:
       - "!!G5!! **No NetworkPolicy.** RCON, game port (online-mode=false), metrics and BlueMap live open to every pod."
       - "!!G6!! **Alerting.** 5 s scrape; CriticalServiceDown watches jobs that are never scraped."
       - "!!G12!! **Committed credentials.** Proxy plugin ships its nuvotifier_service client secret in git."
+
+hidden_annotations:
+  G7: not on this flow; drawn in the content-delivery, tech-stack views
+  G8: not on this flow; drawn in the content-delivery, player-login, tech-stack views
+  G9: not on this flow; drawn in the content-delivery, tech-stack views
+  G10: not on this flow; drawn in the content-delivery, tech-stack views
+  G11: not on this flow; drawn in the content-delivery, tech-stack views

@@ -1,6 +1,7 @@
 # Roadmap
 
 The live view is the org board **Arffornia Roadmap** on GitHub. This page gives the direction.
+The current large workstreams are listed in [Chantiers](chantiers.md).
 
 ## M1 · Foundation & security
 

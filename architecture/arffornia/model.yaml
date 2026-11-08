@@ -64,8 +64,8 @@ elements:
     parent: z-player-pc
     icon: openjdk
     title: "Minecraft client"
-    tech: "[NeoForge · Arffornia mod]"
-    desc: "The game, spawned by MCLC"
+    tech: "[NeoForge · mod]"
+    desc: "Game, run by MCLC"
   - {id: browser, kind: frontend, parent: z-internet, shape: actor, icon: user, title: "Browser", desc: "visitor or player"}
   - id: vote-sites
     kind: external
@@ -120,7 +120,7 @@ elements:
     parent: g-lb
     icon: metallb
     title: "MetalLB"
-    tech: "[L2 · pool 192.168.1.82-123…]"
+    tech: "[L2 · .82-.123 pool]"
     desc: "VIPs: Velocity, Envoy"
   - id: prometheus
     kind: backend
@@ -134,7 +134,7 @@ elements:
     parent: g-obs
     icon: prometheus
     title: "Alertmanager"
-    tech: "[AlertmanagerConfig]"
+    tech: "[AM config]"
     desc: "#arffornia webhook"
     ports: [{name: web, protocol: TCP, port: 9093}]
   - id: vso
@@ -150,7 +150,7 @@ elements:
     icon: vault
     title: "Vault"
     tech: "[standalone · raft]"
-    desc: "kvv2/arffornia, postgres"
+    desc: "kvv2/arffornia, pg"
     ports: [{name: api, protocol: TCP, port: 8200}]
   - id: argocd
     kind: backend
@@ -231,7 +231,7 @@ elements:
     shape: cylinder
     icon: longhorn
     title: "/data volume"
-    tech: "[Longhorn PVC · RWO 30Gi]"
+    tech: "[Longhorn · RWO 30Gi]"
     desc: "World, mods/, config/"
   - id: website
     kind: backend
@@ -302,7 +302,7 @@ elements:
     parent: z-github
     icon: githubactions
     title: "Image build"
-    tech: "[build_app.yml · updater-*]"
+    tech: "[build_app.yml]"
     desc: "Builds config-updater"
   - id: ghcr
     kind: external
@@ -335,7 +335,7 @@ elements:
     parent: z-downloads
     icon: curseforge
     title: "api.curse.tools"
-    tech: "[third-party CurseForge proxy]"
+    tech: "[3rd-party CF proxy]"
     desc: "CF metadata, forgecdn URLs"
     ports: [{name: https, protocol: TCP, port: 443}]
   - id: modrinth
