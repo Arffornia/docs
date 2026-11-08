@@ -7,11 +7,11 @@ INFRA   ?= ../infra
 DRAWIO  ?= $(shell command -v drawio 2>/dev/null || echo /Applications/draw.io.app/Contents/MacOS/draw.io)
 ICONS   := -icons .noodle/icons
 
-.PHONY: check build serve lint-diagrams diagrams discover test-scripts stack clean
+.PHONY: check build serve lint-diagrams diagrams discover test-scripts stack clean progression-lint
 
 check: test-scripts lint-diagrams build
 
-test-scripts:     ## offline tests of the board and chantier scripts (Python 3.9+, stdlib)
+test-scripts:     ## offline tests of the board, chantier and progression scripts (Python 3.9+; schema tests need jsonschema)
 	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_*.py'
 
 stack:            ## print Brian's stack of chantiers (REST; GH_TOKEN or the gh CLI)
@@ -41,3 +41,7 @@ discover:         ## refresh Kubernetes facts from the infra repo (INFRA=path)
 
 clean:
 	rm -rf site
+
+progression-lint: ## convert the current tree (spec 017) and lint it
+	python3 -B scripts/progression.py convert docs/specs/017-progression-model/current-tree-2026-07-31.json -o /tmp/arffornia-model-v1.json
+	python3 -B scripts/progression.py lint /tmp/arffornia-model-v1.json
