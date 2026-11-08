@@ -19,7 +19,7 @@ are answered, its tasks become `agent-ready` issues.
 | [014](014-modpack-lockfile-and-compatibility.md) | Modpack lockfile and mod-compatibility pipeline | Platform | Draft: needs decisions | D1–D5 |
 | [015](015-launcher-play-speed.md) | Launcher speed, from Play to the game window | Platform | Draft: needs decisions | D1–D4 |
 | [016](016-testable-build/spec.md) | Testable build: beta launcher, staging, `playtest up <pr>` | Platform | Draft: needs decisions | D1–D15 |
-| [017](017-progression-model.md) | Progression model: paliers, steps per mod, Noyau modules | M3 | Draft: needs decisions | D1–D5 in the spec |
+| [017](017-progression-model/spec.md) | Progression model: stages, milestones per mod graph, Noyau modules | M3 | Accepted | — |
 
 Specs 004–006 are in an open PR ([#1](https://github.com/Arffornia/docs/pull/1)).
 

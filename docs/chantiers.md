@@ -9,7 +9,7 @@ that one is a batch of PRs that Brian approves at once. An initiative holds many
 
 | Initiative | In one line | Status |
 |---|---|---|
-| [Game design: Arffornia as the progression mod](https://github.com/Arffornia/docs/issues/27) | The mod becomes the hub of the pack: paliers of steps per mod, Noyau modules built by Arffornia chains that consume several mods | direction decided |
+| [Game design: Arffornia as the progression mod](https://github.com/Arffornia/docs/issues/27) | The mod becomes the hub of the pack: stages of milestones per mod graph, Noyau modules built by Arffornia chains that consume several mods | direction decided |
 | [Progression graph tooling](https://github.com/Arffornia/docs/issues/28) | Extract every recipe, generate the graph, prove each milestone is reachable, AI skill on top of static checks | not started |
 | [Gating engine](https://github.com/Arffornia/docs/issues/29) | Synced stages, machines bound to a progression, recipes as a datapack with hot reload | decisions taken |
 | [Machines and multiblocks](https://github.com/Arffornia/docs/issues/30) | Machine framework, fixed and variable multiblocks with hologram, 3D pipeline, first Smelter | 3D pipeline running |
@@ -25,7 +25,7 @@ Specify and prove first, build second, generate the graph last, so nothing is re
 
 | Phase | Work | Initiatives | Depends on |
 |---|---|---|---|
-| 1 · Specs and proofs | Progression model and its API ([spec 017](specs/017-progression-model.md)) | #29, #28 | game design decisions |
+| 1 · Specs and proofs | Progression model and its API ([spec 017](specs/017-progression-model/spec.md)) | #29, #28 | game design decisions |
 | | UI framework spec and an in-game web UI prototype (performance, macOS, Linux) | #32 | spec 017 for the graph data |
 | | Gating prototype in the mod: ingredient gate, crafting lock, datapack and hot reload | #29 | spec 017, spec 001 |
 | | Recipe extraction spike: measure the real size of the graph | #28 | none |
