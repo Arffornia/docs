@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft: needs decisions |
+| **Status** | Accepted with open points (D1 decided 8 Nov 2026; D2 after the prototype) |
 | **Milestone** | M3 · Gameplay foundations |
 | **Repos** | Arffornia_Assets (tokens), Arffornia_Mods (in-game UI), Arffornia_Website, Arffornia_Launcher_V.5.2, keycloak-theme-arffornia |
 | **Related** | Initiative [#32](https://github.com/Arffornia/docs/issues/32) · [007](007-loading-and-title-screen.md) (title screen, D9 web menus) · [017](017-progression-model/spec.md) (the graph data) · Launcher [#89](https://github.com/Arffornia/Arffornia_Launcher_V.5.2/issues/89) |
@@ -92,6 +92,20 @@ the early window).
 With MCEF (D2 a), the in-game graph *is* the website component in a browser; with native (D2 b) it is
 a second, thin renderer kept honest by the shared layout and the visual test.
 
+### MCEF without the waiting (Brian, 8 Nov 2026)
+
+The two costs that made MCEF look slow are avoidable:
+
+- **No in-game download.** The launcher installs the Chromium binaries with the pack, hosted by
+  Arffornia (provisioning files or GitHub releases), so the game never fetches them from
+  CinemaMod's server. Players download them once, like any other pack file.
+- **Instant screens.** The mod starts one browser when the client starts and keeps the graph, wiki
+  and shop pages loaded off-screen. Opening a screen only shows a page that is already rendered.
+  Paladium's menus open instantly, which is consistent with this approach.
+
+What still has to be measured: memory of the resident browser on top of the full pack, frame time
+while a page animates, and support on NixOS, macOS and Windows.
+
 ## Prototype (end of phase 1)
 
 1. Tokens file and generator; website and Keycloak switched to the generated CSS (no visual change
@@ -106,8 +120,8 @@ a second, thin renderer kept honest by the shared layout and the visual test.
 
 | # | Question | Options | Recommendation |
 |---|---|---|---|
-| D1 | One player-facing identity | (a) the launcher's: plum, lavender, `#ff7300`, Montserrat + Chakra Petch for display; teal kept as the second accent for logic and "running" states; Keycloak moves to it. Tools (GitHub, docs) keep slate and `#e0703c`. (b) the tools' set (slate, `#e0703c`, teal, Instrument Sans) everywhere. (c) keep both | **(a)**: three of the four player surfaces already use it and Brian picked it for the title screen; one change (login) instead of three |
-| D2 | Graph, wiki, shop in game | (a) web through MCEF/WebGUI, the website's own component; (b) native LDLib2 renderer from the shared layout; (c) native first, MCEF later for wiki and shop only | **Prototype both (a) and (b) on one stage band, then decide on numbers.** Lean: **(b)** for the graph (it opens often and must feel instant, and no 150 MB download), MCEF only if (b) cannot reach the website's quality |
+| D1 | One player-facing identity | (a) the launcher's: plum, lavender, `#ff7300`, Montserrat + Chakra Petch for display, teal as the second accent; Keycloak moves to it; tools (GitHub, docs) keep slate and `#e0703c` | **Decided (Brian, 8 Nov 2026): (a)** |
+| D2 | Graph, wiki, shop in game | (a) web through MCEF/WebGUI, the website's own component, Chromium installed by the launcher and kept warm; (b) native LDLib2 renderer from the shared layout; (c) native first, MCEF later for wiki and shop only | **Prototype both (a) and (b) on one stage band, then decide on numbers.** With the launcher prefetch and a warm browser, (a) is instant too; it wins if its memory and frame cost stay small, because it is one renderer instead of two |
 | D3 | Native library | (a) LDLib2; (b) TesseraUI; (c) owo-ui | **(a)**: maintained by a large mod team, stylesheets + data binding + debugger, NeoForge 1.21.1 |
 | D4 | Website front-end for the graph and editor | (a) a TypeScript component library shared by the website and the launcher (Vue, as the launcher); (b) Blade + vanilla JS as today | **(a)**: the launcher already uses Vue; one component library for the graph, the shop cards and the wiki |
 
@@ -119,6 +133,7 @@ a second, thin renderer kept honest by the shared layout and the visual test.
 | 2 | Website and Keycloak on the generated tokens | Website, keycloak theme | Visual diff only where D1 changes colours | S |
 | 3 | Web stage-band component from the 017 snapshot | Website (or a shared UI package) | Playwright screenshot test | M |
 | 4 | In-game stage band, native (LDLib2) | Mods | Client screenshot test; open time and frame time measured | M |
-| 5 | In-game stage band, MCEF/WebGUI | Mods | Same screenshot; first-launch download, memory, NixOS/macOS/Windows notes | M |
+| 5 | In-game stage band, MCEF/WebGUI, browser kept warm | Mods | Same screenshot; open time, memory, frame time, NixOS/macOS/Windows notes | M |
+| 5b | Launcher installs the Chromium binaries with the pack | Launcher, Provisioning | No download at game start; binaries hosted by Arffornia | S |
 | 6 | Report and D2 decision | docs | Numbers from 4 and 5, Brian's pick | S |
 | 7 | Launcher on the generated tokens | Launcher | Part of #89 | S |
