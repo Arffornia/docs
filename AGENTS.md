@@ -21,3 +21,6 @@ Project-wide documentation site (MkDocs Material) and the Noodle architecture mo
 - A page states facts from code; when docs and code disagree, fix the doc or open an issue.
 - New decisions: copy `docs/decisions/template.md`, next number, add it to the index.
 - Accepted ADRs are rules; do not contradict them without a superseding ADR.
+- Large workstreams are `initiative` issues listed in `docs/chantiers.md`. When you open, close or
+  change the status of one, update that page in the same PR. New work that fits an initiative is
+  linked from its issue.

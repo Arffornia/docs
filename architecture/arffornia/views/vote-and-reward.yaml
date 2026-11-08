@@ -41,3 +41,13 @@ steps:
   - {reply: claim-fwd, text: "'All your pending rewards have been claimed'"}
   - {reply: claim-nat}
   - {reply: claim}
+
+hidden_annotations:
+  G1: not on this flow; drawn in the runtime, tech-stack views
+  G4: not on this flow; drawn in the runtime, tech-stack views
+  G6: not on this flow; drawn in the runtime, tech-stack views
+  G7: not on this flow; drawn in the content-delivery, tech-stack views
+  G8: not on this flow; drawn in the content-delivery, player-login, tech-stack views
+  G9: not on this flow; drawn in the content-delivery, tech-stack views
+  G10: not on this flow; drawn in the content-delivery, tech-stack views
+  G11: not on this flow; drawn in the content-delivery, tech-stack views

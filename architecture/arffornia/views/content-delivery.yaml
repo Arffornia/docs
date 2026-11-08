@@ -87,3 +87,11 @@ cards:
       - "!!G9!! **No versioning.** main is production for everyone; jars on tag latest; images on :latest."
       - "!!G10!! **Third-party proxy.** CurseForge metadata from api.curse.tools, not the official API."
       - "!!G11!! **Unverified downloads.** Java and NeoForge installer have no checksum."
+
+hidden_annotations:
+  G1: not on this flow; drawn in the runtime, tech-stack views
+  G2: not on this flow; drawn in the previews, runtime, tech-stack, vote-and-reward views
+  G3: not on this flow; drawn in the player-login, runtime, tech-stack, vote-and-reward views
+  G4: not on this flow; drawn in the runtime, tech-stack views
+  G6: not on this flow; drawn in the runtime, tech-stack views
+  G12: not on this flow; drawn in the runtime, tech-stack, vote-and-reward views
