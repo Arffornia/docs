@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arffornia.github.io/docs/specs/017-progression-model/progression-model.schema.json",
+  "title": "Arffornia progression model snapshot",
+  "description": "One snapshot of the progression: stages, graphs (one per mod or branch) and milestones. Spec 017.",
+  "type": "object",
+  "required": ["schema_version", "version", "status", "stages", "graphs", "milestones"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "version": {"type": "integer", "minimum": 0, "description": "Snapshot number, increasing on each publish. 0 for an unpublished draft."},
+    "status": {"enum": ["draft", "published", "archived"]},
+    "source": {"type": "string", "description": "Where the snapshot came from, e.g. a backup file or an editor session."},
+    "stages": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/stage"}},
+    "graphs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/graph"}},
+    "milestones": {"type": "array", "items": {"$ref": "#/$defs/milestone"}}
+  },
+  "$defs": {
+    "key": {"type": "string", "pattern": "^[a-z0-9_]+(/[a-z0-9_]+)?$", "maxLength": 128},
+    "itemId": {"type": "string", "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$", "description": "Item id, or a tag when it starts with #."},
+    "text": {
+      "type": "object",
+      "description": "Player-visible text per locale (ADR-0009). en is required.",
+      "required": ["en"],
+      "additionalProperties": false,
+      "properties": {"en": {"type": "string"}, "fr": {"type": "string"}}
+    },
+    "itemCount": {
+      "type": "object",
+      "required": ["item", "count"],
+      "additionalProperties": false,
+      "properties": {"item": {"$ref": "#/$defs/itemId"}, "count": {"type": "integer", "minimum": 1}}
+    },
+    "stage": {
+      "type": "object",
+      "required": ["number", "name", "threshold", "module"],
+      "additionalProperties": false,
+      "properties": {
+        "number": {"type": "integer", "minimum": 1},
+        "name": {"$ref": "#/$defs/text"},
+        "description": {"$ref": "#/$defs/text"},
+        "threshold": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "module": {"type": "array", "items": {"$ref": "#/$defs/itemCount"}, "description": "Noyau module: Arffornia items to deliver to pass this stage."}
+      }
+    },
+    "graph": {
+      "type": "object",
+      "required": ["key", "name", "branch"],
+      "additionalProperties": false,
+      "properties": {
+        "key": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+        "name": {"$ref": "#/$defs/text"},
+        "mod_id": {"type": ["string", "null"], "pattern": "^[a-z0-9_.-]+$"},
+        "branch": {"enum": ["tech", "magic", "neutral"]},
+        "icon_item": {"$ref": "#/$defs/itemId"}
+      }
+    },
+    "validation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "items"],
+          "additionalProperties": false,
+          "properties": {
+            "type": {"enum": ["obtain", "craft"]},
+            "items": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/itemId"}, "description": "Any one of these completes the milestone."}
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "items"],
+          "additionalProperties": false,
+          "properties": {
+            "type": {"const": "deliver"},
+            "items": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/itemCount"}, "description": "All of these must be delivered."}
+          }
+        }
+      ]
+    },
+    "unlock": {
+      "type": "object",
+      "required": ["item", "gate_mode"],
+      "additionalProperties": false,
+      "properties": {
+        "item": {"$ref": "#/$defs/itemId"},
+        "gate_mode": {"enum": ["machine", "ingredient", "crafting"], "description": "machine: original recipes disabled, a machine recipe replaces them. ingredient: recipes rewritten to need an Arffornia item. crafting: original recipe kept but locked to the stage."},
+        "recipes_to_ban": {"type": "array", "items": {"type": "string"}},
+        "recipe": {"type": ["object", "null"], "description": "Replacement recipe body (spec 001), when gate_mode is machine."},
+        "shop_price": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "milestone": {
+      "type": "object",
+      "required": ["key", "graph", "stage", "title", "requires", "validation", "unlocks", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "key": {"$ref": "#/$defs/key"},
+        "graph": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+        "stage": {"type": "integer", "minimum": 1},
+        "title": {"$ref": "#/$defs/text"},
+        "description": {"$ref": "#/$defs/text"},
+        "icon_type": {"type": "string"},
+        "requires": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/key"}},
+        "validation": {"oneOf": [{"$ref": "#/$defs/validation"}, {"type": "null"}]},
+        "unlocks": {"type": "array", "items": {"$ref": "#/$defs/unlock"}},
+        "effort": {"type": ["integer", "null"], "minimum": 0, "description": "Estimated effort, set by the graph tool."},
+        "power": {"type": ["object", "null"], "description": "Power metrics of what this milestone unlocks, set by the graph tool."},
+        "source": {"enum": ["manual", "tool", "legacy"]},
+        "layout": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}}
+        }
+      }
+    }
+  }
+}

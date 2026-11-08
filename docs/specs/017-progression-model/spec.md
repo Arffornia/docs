@@ -40,8 +40,10 @@ read this model.
 
 ## The current tree (31 Jul 2026 backup)
 
-The latest export, [`current-tree-2026-07-31.json`](current-tree-2026-07-31.json), is the reference
-for this spec and the first fixture of every test. What it contains:
+The latest export, [`current-tree-2026-07-31.json`](current-tree-2026-07-31.json), is the first
+fixture of every test. It is **an example of the intent, not a target**: Brian built it during
+development, it was never played, and the v2 graph is free to do better. It shows the kind of
+milestones he wants and how mods spread over stages. What it contains:
 
 | | Count |
 |---|---|
@@ -66,7 +68,12 @@ What a first lint finds, before any tool exists:
 | Milestones with the placeholder description | 193 | "A new adventure begins..." |
 | Stages with placeholder names | 3 | stage 1 "Cedrick Veum" (seed data) |
 
-These are the cases the static checks of #28 must catch, and they are small fixes, not a redesign.
+These are the cases the static checks of #28 must catch. Run them with `make progression-lint`:
+[`scripts/progression.py`](https://github.com/Arffornia/docs/blob/main/scripts/progression.py)
+converts the backup into a snapshot that follows
+[`progression-model.schema.json`](progression-model.schema.json), then lints it. Today it reports
+43 dangling links (dropped), 5 `requires_later_stage` errors, 8 milestones with nothing to
+validate them, and 1 cross-graph link.
 
 ## Player experience
 
@@ -139,7 +146,7 @@ milestone removed in a later snapshot stays in history and stops counting.
 
 ### One schema, three consumers
 
-- `progression-model.schema.json` (JSON Schema 2020-12) lives in this folder and is vendored by the
+- [`progression-model.schema.json`](progression-model.schema.json) (JSON Schema 2020-12) lives in this folder and is vendored by the
   website, the mod tests and the graph tool. The current tree, converted, is its first fixture.
 - The website exports a snapshot as one JSON document. The datapack of spec 001 is generated from
   the same snapshot: unlocks become recipe overrides, validations become hidden advancements.
@@ -202,8 +209,8 @@ launcher move to the new ones, then are removed in one PR per client.
 
 | # | Title | Repo | Acceptance criteria | Effort |
 |---|---|---|---|---|
-| 1 | JSON Schema with fixtures, the current tree converted as the first one | docs | Valid and invalid fixtures; CI validates them | S |
-| 2 | Lint script on the current tree (rules 1–2, dangling links) | docs or graph tool | Reports the 43 + 5 + 1 findings above | S |
+| 1 | JSON Schema with fixtures, the current tree converted as the first one | docs | Done: `progression-model.schema.json`, tests in `scripts/test_progression.py` | S |
+| 2 | Lint script on the current tree (rules 1–2, dangling links, cycles) | docs | Done: `make progression-lint` | S |
 | 3 | Store: snapshot table and new columns | Website | Migrations, factories, rules validator with unit tests | M |
 | 4 | Progression state tables and idempotent events endpoint | Website | Feature tests for replay, reorder, stage opening, team scope | M |
 | 5 | Model and state read endpoints with ETag | Website | Contract tests; snapshot JSON validates against the schema | S |
