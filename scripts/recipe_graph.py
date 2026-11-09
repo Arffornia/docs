@@ -251,7 +251,7 @@ def compact(dump: pathlib.Path) -> dict:
         if a is None:
             return None
         r = [a, s[2] if isinstance(s[2], int) else 1, s[0]]
-        if s[3] is not None and s[3] < 1:
+        if isinstance(s[3], (int, float)) and s[3] < 1:
             r.append(round(s[3], 3))
         return r
 
@@ -275,8 +275,8 @@ def compact(dump: pathlib.Path) -> dict:
             if not [s for s in ins if s[1]] and r["ingredients"]:
                 ins = [(ITEM, known(s), 1, None) for s in r["ingredients"]]
         if not outs and r.get("result"):
-            res = r["result"]
-            outs = [(ITEM, [add(res["item"], ITEM)] if res["item"] in item_ids else [], res.get("count", 1), None)]
+            res_id = r["result"].get("item") or r["result"].get("id")
+            outs = [(ITEM, [add(res_id, ITEM)] if res_id in item_ids else [], r["result"].get("count", 1), None)]
         goo_tier = j.get("tierRequirement")
         if r["type"].startswith("justdirethings:goospread") and f"justdirethings:gooblock_tier{goo_tier}" in item_ids:
             ins.append((ITEM, [add(f"justdirethings:gooblock_tier{goo_tier}", ITEM)], 1, None))
@@ -333,6 +333,7 @@ class MilestoneResult:
     status: str  # ok | needs_link | unreachable
     blockers: dict[str, list[Blocker]] = field(default_factory=dict)
     proposed_links: list[str] = field(default_factory=list)
+    links_verified: bool = False
 
 
 class Pack:
@@ -341,6 +342,7 @@ class Pack:
         self.index = {(e[1], e[0]): i for i, e in enumerate(graph["entries"])}
         self.milestones = {m["key"]: m for m in model["milestones"]}
         self.unknown_items: set[str] = set()
+        self.ancestors: dict[str, frozenset[str]] = ancestors(model)
         canon = self._merge_fluids(graph["entries"])
         alts = [[canon[x] for x in alternatives] for alternatives in graph["alts"]]
         tags = graph.get("tags", {})
@@ -348,6 +350,9 @@ class Pack:
         self.gated: dict[int, list[str]] = collections.defaultdict(list)
         banned: set[str] = set()
         for m in model["milestones"]:
+            for delivered in (m.get("validation") or {}).get("items", []):
+                if isinstance(delivered, dict):
+                    self._item(delivered["item"])
             for unlock in m["unlocks"]:
                 self.gated[self._item(unlock["item"])].append(m["key"])
                 banned.update(unlock["recipes_to_ban"])
@@ -359,6 +364,7 @@ class Pack:
         produced: set[int] = set()
         machines = [row[1] for row in graph["types"]]
         self.guessed_machines = sorted(row[0] for row in graph["types"] if row[2] == "guess")
+        self.machineless_types = sorted(row[0] for row in graph["types"] if row[2] in ("none", "missing"))
         for type_idx, inputs, outputs, recipe_id in graph["recipes"]:
             outs = [i for o in outputs for i in alts[o[0]]]
             produced.update(outs)
@@ -387,6 +393,7 @@ class Pack:
                     continue
                 slots = [self._ingredient(i["item"], tags) for i in recipe.get("ingredients") or [] if i]
                 outs = [self._item(r["item"]) for r in recipe.get("result") or []] or [self._item(unlock["item"])]
+                produced.update(outs)
                 self._add_recipe(slots + [(crafter,)], outs, recipe.get("type", ""), m["key"])
 
         world = {i for i, id_ in enumerate(self.ids) if i not in produced}
@@ -408,6 +415,7 @@ class Pack:
             for x in set(self.outputs[r]):
                 self.producers[x].append(r)
         self.n_slots = n
+        self.banned_outputs = {x for x in range(len(self.ids)) if x in produced and not self.producers[x]}
         self._cache: dict[frozenset, bytearray] = {}
 
     def _merge_fluids(self, entries: list[list]) -> list[int]:
@@ -523,8 +531,10 @@ class Pack:
             return Blocker(self.ids[x], "gated", unlockers)
         if self.ids[x] in self.unknown_items:
             return Blocker(self.ids[x], "not in the pack")
-        if not self.producers[x]:
+        if x in self.banned_outputs:
             return Blocker(self.ids[x], "no recipe left (all banned)")
+        if not self.producers[x]:
+            return Blocker(self.ids[x], "no recipe and not a world resource")
         return Blocker(self.ids[x], "no reachable recipe")
 
     def leak_recipe(self, x: int) -> str:
@@ -543,7 +553,9 @@ def ancestors(model: dict, skip: frozenset[tuple[str, str]] = frozenset()) -> di
             return memo[key]
         result: set[str] = set()
         for parent in by_key[key]["requires"]:
-            if parent in by_key and parent not in path and (key, parent) not in skip:
+            if parent in path or parent == key:
+                raise ValueError(f"cycle through {key} and {parent}; run progression.py lint first")
+            if parent in by_key and (key, parent) not in skip:
                 result |= {parent} | visit(parent, path | {key})
         memo[key] = frozenset(result)
         return memo[key]
@@ -581,26 +593,50 @@ def check_milestone(pack: Pack, milestone: dict, strict: frozenset[str], relaxed
         result.status, result.blockers = "unreachable", relaxed_blockers
         return result
     result.status, result.blockers = "needs_link", strict_blockers
-    links = set()
-    for found in strict_blockers.values():
-        for b in found:
-            candidates = [k for k in b.unlocked_by if k in relaxed and k != key]
-            if candidates:
-                links.add(candidates[0])
-    result.proposed_links = sorted(links)
+    result.proposed_links, result.links_verified = propose_links(pack, milestone, strict, relaxed, strict_blockers)
     return result
+
+
+def propose_links(pack: Pack, milestone: dict, strict: frozenset[str], relaxed: frozenset[str],
+                  blockers: dict[str, list[Blocker]]) -> tuple[list[str], bool]:
+    """Greedily adds milestones of `relaxed` until the strict check passes."""
+    key, links, done = milestone["key"], [], strict
+    for _ in range(8):
+        if not blockers:
+            return sorted(links), True
+        named = sorted({k for found in blockers.values() for b in found for k in b.unlocked_by
+                        if k in relaxed and k not in done and k != key},
+                       key=lambda k: (pack.milestones[k]["stage"], k))
+        options = named or sorted(relaxed - done, key=lambda k: (-pack.milestones[k]["stage"], k))
+        best, best_blockers = None, blockers
+        for candidate in options:
+            trial = _blocked(pack, milestone, done | {candidate} | pack.ancestors[candidate])
+            if len(trial) < len(best_blockers):
+                best, best_blockers = candidate, trial
+                if named:
+                    break
+        if best is None:
+            return sorted(links), False
+        links.append(best)
+        done, blockers = done | {best} | pack.ancestors[best], best_blockers
+    return sorted(links), not blockers
 
 
 def check(graph: dict, model: dict) -> dict:
     pack = Pack(graph, model)
-    anc = ancestors(model)
+    anc = pack.ancestors
+    descendants: dict[str, set[str]] = collections.defaultdict(set)
+    for child, parents in anc.items():
+        for parent in parents:
+            descendants[parent].add(child)
     by_stage: dict[int, set[str]] = collections.defaultdict(set)
     for m in model["milestones"]:
         by_stage[m["stage"]].add(m["key"])
 
     def open_at(stage: int, key: str) -> frozenset[str]:
         """Milestones a player may have done when working on `key` at `stage`."""
-        return frozenset(k for s, keys in by_stage.items() if s <= stage for k in keys if k != key)
+        return frozenset(k for s, keys in by_stage.items() if s <= stage for k in keys
+                         if k != key and k not in descendants[key])
 
     def run(m: dict, prerequisites: frozenset[str]) -> MilestoneResult:
         return check_milestone(pack, m, prerequisites, open_at(m["stage"], m["key"]) | prerequisites)
@@ -624,11 +660,14 @@ def check(graph: dict, model: dict) -> dict:
         for parent in later:
             parent_row = pack.milestones[parent]
             if parent not in blocking:
-                reverse = m["key"] in results[parent].proposed_links
+                own = anc[parent] - {m["key"]}
+                unlockers = {k for found in _blocked(pack, parent_row, own).values() for b in found for k in b.unlocked_by}
+                reverse = bool(unlockers & ({m["key"]} | skipped))
                 fix = (f"reverse it: `{parent}` requires `{m['key']}`" if reverse else "drop the link")
             else:
-                moved = run({**parent_row, "stage": m["stage"]}, anc[parent])
-                fix = (f"move `{parent}` to stage {m['stage']}" if moved.status != "unreachable"
+                movable = all(pack.milestones[k]["stage"] <= m["stage"] for k in anc[parent])
+                moved = run({**parent_row, "stage": m["stage"]}, anc[parent]) if movable else None
+                fix = (f"move `{parent}` to stage {m['stage']}" if moved and moved.status != "unreachable"
                        else f"move `{m['key']}` to stage {parent_row['stage']}")
             backward.append({"milestone": m["key"], "stage": m["stage"], "requires": parent,
                              "requires_stage": parent_row["stage"], "needed": parent in blocking, "fix": fix})
@@ -655,6 +694,7 @@ def check(graph: dict, model: dict) -> dict:
         "unknown_items": sorted(pack.unknown_items),
         "unresolved_fluid_tags": sorted(pack.unresolved_fluid_tags),
         "guessed_machines": pack.guessed_machines,
+        "types_without_machine": pack.machineless_types,
     }
 
 
@@ -689,7 +729,8 @@ def markdown(report: dict) -> str:
     if rows:
         lines += ["### Missing links", "", "| Stage | Milestone | Should also require |", "|---|---|---|"]
         for m in rows:
-            lines.append(f"| {m['stage']} | `{m['key']}` | {', '.join(f'`{k}`' for k in m['proposed_links'])} |")
+            links = ", ".join(f"`{k}`" for k in m["proposed_links"]) or "none found"
+            lines.append(f"| {m['stage']} | `{m['key']}` | {links}{'' if m['links_verified'] else ' (not enough)'} |")
         lines.append("")
     if report["never_craftable"]:
         lines += ["### Never craftable", "", "| Item | Unlocked by |", "|---|---|"]

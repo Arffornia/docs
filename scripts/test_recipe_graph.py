@@ -193,9 +193,63 @@ class CheckTest(unittest.TestCase):
         self.assertEqual([{"item": "mod:controller", "unlocked_by": ["m/line"]}], never)
 
 
+class ReviewRegressionTest(unittest.TestCase):
+    def test_a_delivery_of_an_item_missing_from_the_pack_is_reported_not_raised(self):
+        # Arrange
+        g = graph([CRAFTER])
+        m = model(milestone("m/a", 1, unlocks=[("mod:gem", ["mod:ore"], [])]),
+                  milestone("m/b", 2, unlocks=[("mod:fruit", ["mod:ore"], [])], deliver=["mod:not_there"]))
+
+        # Act
+        b = next(r for r in rg.check(g, m)["milestones"] if r["key"] == "m/b")
+
+        # Assert
+        self.assertEqual("not in the pack", b["blockers"]["mod:not_there"][0]["reason"])
+
+    def test_never_proposes_a_link_to_a_descendant(self):
+        # Arrange
+        g = graph([CRAFTER])
+        m = model(milestone("m/a", 2, unlocks=[("mod:gem", ["mod:seed"], [])]),
+                  milestone("m/b", 2, unlocks=[("mod:seed", ["mod:ore"], [])], requires=["m/a"]))
+
+        # Act
+        a = next(r for r in rg.check(g, m)["milestones"] if r["key"] == "m/a")
+
+        # Assert
+        self.assertEqual("unreachable", a["status"])
+
+    def test_proposes_the_milestone_behind_an_alternate_route(self):
+        # Arrange
+        g = graph([CRAFTER, ("minecraft:crafting", ["mod:crystal"], ["mod:gear"], "gear_from_crystal")])
+        m = model(milestone("m/z", 5, unlocks=[("mod:gear", ["mod:ore"], [])]),
+                  milestone("m/b", 1, unlocks=[("mod:crystal", ["mod:ore"], [])]),
+                  milestone("m/a", 2, unlocks=[("mod:product", ["mod:gear"], [])]))
+
+        # Act
+        a = next(r for r in rg.check(g, m)["milestones"] if r["key"] == "m/a")
+
+        # Assert
+        self.assertEqual((["m/b"], True), (a["proposed_links"], a["links_verified"]))
+
+    def test_reverses_a_backward_link_even_when_the_later_milestone_stays_blocked(self):
+        # Arrange
+        g = graph([CRAFTER])
+        m = model(milestone("m/tier", 1, unlocks=[("mod:seed", ["mod:ore"], [])], requires=["m/late"]),
+                  milestone("m/late", 2, unlocks=[("mod:fruit", ["mod:seed", "mod:gem"], [])]),
+                  milestone("m/gem", 3, unlocks=[("mod:gem", ["mod:ore"], [])]))
+
+        # Act
+        backward = rg.check(g, m)["backward_links"]
+
+        # Assert
+        self.assertEqual("reverse it: `m/late` requires `m/tier`", backward[0]["fix"])
+
+
 class CompactTest(unittest.TestCase):
     def dump(self, recipes, items):
-        directory = pathlib.Path(tempfile.mkdtemp())
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        directory = pathlib.Path(temporary.name)
         (directory / "tags.json").write_text(json.dumps({"c:ingots/iron": ["minecraft:iron_ingot"]}))
         (directory / "items.jsonl").write_text("\n".join(json.dumps({"id": i, "mod": i.split(":")[0]}) for i in items))
         (directory / "recipes.jsonl").write_text("\n".join(json.dumps(r) for r in recipes))

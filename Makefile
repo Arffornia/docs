@@ -48,6 +48,6 @@ progression-lint: ## convert the current tree (spec 017) and lint it
 
 progression-check: ## completability of the current tree against a recipe dump (DUMP=dir of /arffornia dump recipes)
 	@test -n "$(DUMP)" || { echo "usage: make progression-check DUMP=<dump dir>"; exit 2; }
-	python3 -B scripts/progression.py convert docs/specs/017-progression-model/current-tree-2026-07-31.json -o /tmp/arffornia-model-v1.json 2>/dev/null
+	python3 -B scripts/progression.py convert docs/specs/017-progression-model/current-tree-2026-07-31.json -o /tmp/arffornia-model-v1.json
 	python3 -B scripts/recipe_graph.py compact $(DUMP) -o /tmp/arffornia-recipe-graph.json
 	python3 -B scripts/recipe_graph.py check /tmp/arffornia-recipe-graph.json /tmp/arffornia-model-v1.json --json /tmp/arffornia-completability.json --markdown /tmp/arffornia-completability.md
