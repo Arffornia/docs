@@ -112,6 +112,7 @@ nav:
       - 017 Progression model: specs/017-progression-model/spec.md
       - 017 Completability of the current tree: specs/017-progression-model/completability.md
       - 018 UI framework: specs/018-ui-framework.md
+      - 018 Stage band prototype report: specs/018-ui-framework/prototype-report.md
   - Chantiers: chantiers.md
   - Roadmap: roadmap.md
   - Glossary: glossary.md

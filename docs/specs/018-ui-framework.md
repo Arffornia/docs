@@ -116,12 +116,16 @@ while a page animates, and support on NixOS, macOS and Windows.
 3. Measured and written down: open time, memory, frame time with the full pack, first-launch download,
    NixOS, Windows and macOS behaviour.
 
+Both in-game renderers were prototyped on one band (work items 4 and 5); the numbers and screenshots
+are in the [prototype report](018-ui-framework/prototype-report.md) (9 Nov 2026). Windows and macOS
+are still to be checked.
+
 ## Decisions needed
 
 | # | Question | Options | Recommendation |
 |---|---|---|---|
 | D1 | One player-facing identity | (a) the launcher's: plum, lavender, `#ff7300`, Montserrat + Chakra Petch for display, teal as the second accent; Keycloak moves to it; tools (GitHub, docs) keep slate and `#e0703c` | **Decided (Brian, 8 Nov 2026): (a)** |
-| D2 | Graph, wiki, shop in game | (a) web through MCEF/WebGUI, the website's own component, Chromium installed by the launcher and kept warm; (b) native LDLib2 renderer from the shared layout; (c) native first, MCEF later for wiki and shop only | **Prototype both (a) and (b) on one stage band, then decide on numbers.** With the launcher prefetch and a warm browser, (a) is instant too; it wins if its memory and frame cost stay small, because it is one renderer instead of two |
+| D2 | Graph, wiki, shop in game | (a) web through MCEF/WebGUI, the website's own component, Chromium installed by the launcher and kept warm; (b) native LDLib2 renderer from the shared layout; (c) native first, MCEF later for wiki and shop only | **Prototype both (a) and (b) on one stage band, then decide on numbers** ([report](018-ui-framework/prototype-report.md)). With the launcher prefetch and a warm browser, (a) is instant too; it wins if its memory and frame cost stay small, because it is one renderer instead of two |
 | D3 | Native library | (a) LDLib2; (b) TesseraUI; (c) owo-ui | **(a)**: maintained by a large mod team, stylesheets + data binding + debugger, NeoForge 1.21.1 |
 | D4 | Website front-end for the graph and editor | (a) a TypeScript component library shared by the website and the launcher (Vue, as the launcher); (b) Blade + vanilla JS as today | **(a)**: the launcher already uses Vue; one component library for the graph, the shop cards and the wiki |
 
