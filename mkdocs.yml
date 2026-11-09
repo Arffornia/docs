@@ -110,6 +110,7 @@ nav:
       - 015 Launcher Play speed: specs/015-launcher-play-speed.md
       - 016 Testable build: specs/016-testable-build/spec.md
       - 017 Progression model: specs/017-progression-model/spec.md
+      - 017 Completability of the current tree: specs/017-progression-model/completability.md
       - 018 UI framework: specs/018-ui-framework.md
   - Chantiers: chantiers.md
   - Roadmap: roadmap.md

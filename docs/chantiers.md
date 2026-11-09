@@ -10,7 +10,7 @@ that one is a batch of PRs that Brian approves at once. An initiative holds many
 | Initiative | In one line | Status |
 |---|---|---|
 | [Game design: Arffornia as the progression mod](https://github.com/Arffornia/docs/issues/27) | The mod becomes the hub of the pack: stages of milestones per mod graph, Noyau modules built by Arffornia chains that consume several mods | direction decided |
-| [Progression graph tooling](https://github.com/Arffornia/docs/issues/28) | Extract every recipe, generate the graph, prove each milestone is reachable, AI skill on top of static checks | not started |
+| [Progression graph tooling](https://github.com/Arffornia/docs/issues/28) | Extract every recipe, generate the graph, prove each milestone is reachable, AI skill on top of static checks | in progress: recipe dump merged, [completability check](specs/017-progression-model/completability.md) |
 | [Gating engine](https://github.com/Arffornia/docs/issues/29) | Synced stages, machines bound to a progression, recipes as a datapack with hot reload | decisions taken |
 | [Machines and multiblocks](https://github.com/Arffornia/docs/issues/30) | Machine framework, fixed and variable multiblocks with hologram, 3D pipeline, first Smelter | 3D pipeline running |
 | [Unified guide and wiki](https://github.com/Arffornia/docs/issues/31) | One source for the in-game book and the website wiki, multiblocks layer by layer | not started |

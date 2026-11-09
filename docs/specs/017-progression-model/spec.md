@@ -75,6 +75,10 @@ converts the backup into a snapshot that follows
 43 dangling links (dropped), 5 `requires_later_stage` errors, 8 milestones with nothing to
 validate them, and 1 cross-graph link.
 
+The recipe-level check goes further: it replays the tree on the full recipe dump of the pack and
+says, per milestone, whether the stages open at that point can make what it unlocks. Results and
+rules: [Completability of the current tree](completability.md) (`make progression-check DUMP=<dir>`).
+
 ## Player experience
 
 - The graph shows stages as bands. Each band shows `done / total` and a percentage, e.g.
