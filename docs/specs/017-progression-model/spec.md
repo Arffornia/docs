@@ -133,6 +133,13 @@ and players never see these advancements.
 
 Existing tables gain columns; only the snapshot and state tables are new.
 
+**As built (Website#149, 21 Nov 2026).** The editable tables are the one working draft, and a
+published snapshot is a frozen JSON document in `model_snapshots` (`document`, `etag` = its sha256),
+instead of a `snapshot_id` on every row: no copy of the tree per version, and the editor keeps
+working on the same tables. Rolling back is a `PUT` of an old snapshot into the draft, then a publish.
+`progression_events` also stores `snapshot_version`. Spec 019 added `progressions.is_public` (default
+true) and `player_playtime` (one row per player and day).
+
 | Table | Change |
 |---|---|
 | `model_snapshots` | new: `version`, `status` (`draft`/`published`/`archived`), `schema_version`, `published_at`, `published_by`, `notes` |
@@ -162,9 +169,17 @@ milestone removed in a later snapshot stays in history and stops counting.
 | `GET /api/progression/model` (`?version=`) | public, ETag | The published snapshot. The UI and the mod cache it by version |
 | `GET /api/progressions/{id}/state` | public | Done milestones, open stages, percentages, deliveries, next milestones |
 | `POST /api/progressions/{id}/events` | service `progression_editor` | `milestone_completed` / `module_delivered`, idempotent by (progression, key) or delivery id |
-| `GET/PUT /api/progression/drafts/{id}` | admin | Editor reads and writes a draft |
+| `GET/PUT /api/progression/drafts/{id}` | admin | Editor reads and writes a draft; `{id}` is `current`, the one working draft |
 | `POST /api/progression/drafts/{id}/validate` | admin | Schema, rules 1–7, reachability report from the graph tool when available |
-| `POST /api/progression/drafts/{id}/publish` | admin | Freezes the next version, regenerates the datapack, the mod reloads on command (spec 001) |
+| `POST /api/progression/drafts/{id}/publish` | admin | Freezes the next version, regenerates the datapack, the mod reloads on command (spec 001). Schema errors always block; rule errors block unless `accept_rule_errors` |
+| `GET /api/players/{uuid}/progression/state` | public | State of the player's active progression |
+| `PUT /api/progressions/{id}/visibility` | member, admin | Public or private (spec 019); a private state is shown to members, admins and the game server only |
+| `POST /api/players/playtime` | service `progression_editor` | Daily playtime total per player (spec 019) |
+| `GET /api/stats/progression` | admin | Progressions per stage, median time to open each stage, completion rate per milestone |
+
+Events are sent as `{"events": [{"id", "type", "milestone" \| "stage" + "item" + "count", "occurred_at" (ms), "actor"}]}`,
+at most 100 per call; the answer gives a status per event (`applied`, `duplicate`, `rejected` with a
+reason) and the new state.
 
 The current `/stages`, `/milestones` and `/progression/*` routes stay until the mod and the
 launcher move to the new ones, then are removed in one PR per client.
@@ -215,10 +230,10 @@ launcher move to the new ones, then are removed in one PR per client.
 |---|---|---|---|---|
 | 1 | JSON Schema with fixtures, the current tree converted as the first one | docs | Done: `progression-model.schema.json`, tests in `scripts/test_progression.py` | S |
 | 2 | Lint script on the current tree (rules 1–2, dangling links, cycles) | docs | Done: `make progression-lint` | S |
-| 3 | Store: snapshot table and new columns | Website | Migrations, factories, rules validator with unit tests | M |
-| 4 | Progression state tables and idempotent events endpoint | Website | Feature tests for replay, reorder, stage opening, team scope | M |
-| 5 | Model and state read endpoints with ETag | Website | Contract tests; snapshot JSON validates against the schema | S |
-| 6 | Draft, validate and publish endpoints | Website | Publish freezes a version and triggers the datapack build | M |
-| 7 | Migration command to snapshot v1 | Website | Current tree converts with zero schema errors; report of manual items | M |
+| 3 | Store: snapshot table and new columns | Website | Migrations, factories, rules validator with unit tests. Done in Website#149 | M |
+| 4 | Progression state tables and idempotent events endpoint | Website | Feature tests for replay, reorder, stage opening, team scope. Done in Website#149 | M |
+| 5 | Model and state read endpoints with ETag | Website | Contract tests; snapshot JSON validates against the schema. Done in Website#149 | S |
+| 6 | Draft, validate and publish endpoints | Website | Publish freezes a version and triggers the datapack build. Done in Website#149, except the datapack: it is still built from the live tables, keyed by row id (needs a mod change) | M |
+| 7 | Migration command to snapshot v1 | Website | Current tree converts with zero schema errors; report of manual items. Done in Website#149: `php artisan progression:snapshot-v1 [--dry-run]`; on the 31 Jul tree it matches `progression.py convert` | M |
 | 8 | Mod: milestone store, hidden-advancement detection, event sender with retry | Mods | GameTests for obtain and craft, team scope, offline API | L |
 | 9 | Mod: stage check for machine formation and unlocks | Mods | GameTest: a machine of stage N+1 does not form at N | S |
