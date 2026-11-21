@@ -121,13 +121,67 @@ Spec 018 said (a) wins "if its memory and frame cost stay small". Measured here:
 
 ## To verify by hand before deciding
 
-- Both screens on a real GPU, at 60 fps or more: frame time with the screen open, and the browser's
-  CPU on a mid-range player PC.
+- ~~Both screens on a real GPU, at 60 fps or more~~: done on 21 Nov 2026, see below. A mid-range player
+  PC is still to be measured.
 - Windows and macOS: WebGUI starts, antivirus does not flag `jcef_helper`, the pre-placed runtime is
   picked up.
 - Memory on an 8 GB player machine with the full pack.
 - GUI scales 2 and 4, and a 1080p window: native text sharpness.
-- Clicking and scrolling in the web screen (not wired in the prototype).
+- Clicking and scrolling in the web screen: wired on 21 Nov 2026, not yet checked by hand.
+
+## Real GPU (21 Nov 2026)
+
+Spec 018 work item 6b. Same band, same full pack (333 mods, NeoForge 21.1.172, `-Xmx10G`), on a real
+display this time: RTX 5080 (NVIDIA 595.71.05) through Xwayland, Ryzen 9 9900X, NixOS. Vsync off, frame
+cap 260, GUI scale 3, a new peaceful creative world. Run A: pack with LDLib2, without WebGUI. Run B: pack
+with both. The WebGUI demo HUD and web main menu were off. Raw data:
+[bench-gpu-2026-11-21.json](bench-gpu-2026-11-21.json). Scripts: `tools/stage-band/bench` in
+[Mods#60](https://github.com/Arffornia/Arffornia_Mods/pull/60).
+
+| In game, native (LDLib2), real GPU | In game, web (WebGUI), real GPU |
+|---|---|
+| ![Native on a real GPU](band-gpu-native.webp) | ![Web on a real GPU](band-gpu-web.webp) |
+
+| Measure (mean, p95 in brackets) | 1280 × 720 | 1920 × 1080 |
+|---|---|---|
+| Frame time, no screen open (run A / run B) | 4.4 / 3.4 ms | 2.5 / 3.4 ms |
+| Frame time, native screen open (run A / run B) | 7.4 / 8.5 ms | 5.0 / 5.5 ms |
+| Render-thread time inside the native screen | 2.4 to 3.0 ms (3.8 to 5.2) | 1.8 to 1.9 ms (2.9 to 3.1) |
+| Frame time, web screen open at 60 / 30 / 15 fps | 3.2 to 5.0 / 2.9 / 2.2 ms | 2.1 to 2.8 / 2.0 / 2.2 ms |
+| Render-thread time inside the web screen | 0.02 to 0.09 ms (0.03 to 0.25) | 0.02 to 0.07 ms (0.03 to 0.33) |
+| Open to first frame, warm (first open of the session) | native 16 to 45 ms, one 173 ms (144 to 272), web 3 to 5 ms (12 to 22) | native 15 to 26 ms (124 to 145), web 3 to 5 ms (3 to 20) |
+| Browser CPU, screen open at 60 / 30 / 15 fps (one core) | 19 to 21 % / 10 % / 5 % | 16 to 20 % / 10 % / 5 % |
+| Browser CPU, screen closed (warm, 1 fps) | 0.3 to 0.7 % | 0.4 to 1.0 % |
+| Browser helper processes (7 or 8), PSS | 89 to 182 MB | 103 to 151 MB |
+| Whole client in world, idle, PSS (run A / run B) | 13 230 to 13 273 / 13 278 to 13 413 MB | 13 086 / 13 278 to 13 358 MB |
+
+How to read them:
+
+- **The web screen costs no frame time.** With it open, frames take as long as with no screen at all;
+  copying the browser texture takes under 0.1 ms. The native screen adds 2 to 3 ms of render thread per
+  frame: a third of the budget at 144 Hz.
+- **Browser CPU follows the page's frame rate.** WebGUI starts Chromium with `--disable-gpu` and
+  `--disable-gpu-compositing`, so the page is painted on the CPU whatever the graphics card. The band's
+  glow animation keeps it painting. 30 fps halves the cost, 15 fps quarters it; a page with nothing
+  moving paints nothing.
+- **Memory.** The helpers take 90 to 180 MB PSS and shrink after a few minutes. The whole client grows
+  by 50 to 270 MB depending on the run, 1 to 2 % of 13.2 GB; heap noise between runs is of the same size.
+- **Hidden when closed.** The JCEF bundled with WebGUI 2.0 does not expose `WasHidden`. Dropping the
+  page to 1 fps on close already brings the browser to under 1 % of a core, so nothing more is needed.
+- **Input.** Mouse moves, buttons and the wheel are forwarded to the page. Hover and click on the
+  band are not checked by hand yet.
+
+**Verdict: D2 (a) holds; the (c) fallback does not trigger.** Content screens run at 30 fps when the
+page animates and 15 fps or less when it is static; the browser drops to 1 fps when the screen closes.
+
+### Windows, to check later
+
+- WebGUI starts, and finds the runtime the launcher pre-placed (`WMC_RUNTIME_DIR`, default
+  `%LOCALAPPDATA%\wmc\runtime`) without downloading.
+- Windows Defender and common antivirus do not flag or slow `jcef_helper.exe`.
+- The same bench (`benchweb:60,30,15`, 720p and 1080p): frame time and browser CPU.
+- Mouse and wheel positions with Windows display scaling at 125 % and 150 %.
+- Minimising the game window and alt-tab with the web screen open.
 
 ## Alternatives looked at after the report
 

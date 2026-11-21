@@ -1,0 +1,635 @@
+{
+ "date": "2026-11-21",
+ "machine": "Ryzen 9 9900X, 32 GB, RTX 5080 (NVIDIA 595.71.05), NixOS, Xwayland on a real display",
+ "pack": "333 mods, NeoForge 21.1.172, -Xmx10G, vsync off, maxFps 260, GUI scale 3, new peaceful creative world",
+ "runs": {
+  "run-a-1080": {
+   "window": "1920x1080",
+   "gui_scale": 3.0,
+   "in_world": true,
+   "rss_start_kb": 13419456,
+   "baseline": {
+    "frames": 3961,
+    "frame_ms": {
+     "mean": 2.5353517642009593,
+     "p50": 2.183615,
+     "p95": 4.853736,
+     "p99": 7.74813,
+     "max": 31.473405
+    },
+    "screen_render_ms": {},
+    "heap_used_mb": 7441,
+    "rss_kb": 13419852
+   },
+   "build_ms_native": [
+    93.921163,
+    16.711229,
+    14.452552,
+    11.332975,
+    11.281036,
+    12.548545
+   ],
+   "open_ms_native": [
+    145.165481,
+    26.312991,
+    22.397653,
+    17.063533,
+    17.36469,
+    21.280869
+   ],
+   "native": {
+    "frames": 1990,
+    "frame_ms": {
+     "mean": 5.042752245728644,
+     "p50": 4.517593,
+     "p95": 9.056745,
+     "p99": 11.884153,
+     "max": 37.683155
+    },
+    "screen_render_ms": {
+     "mean": 1.777057843797087,
+     "p50": 1.643297,
+     "p95": 2.883824,
+     "p99": 3.494284,
+     "max": 26.931496
+    },
+    "heap_used_mb": 9198,
+    "rss_kb": 13429716
+   }
+  },
+  "run-a-720": {
+   "window": "1280x720",
+   "gui_scale": 3.0,
+   "in_world": true,
+   "rss_start_kb": 13567516,
+   "baseline": {
+    "frames": 2277,
+    "frame_ms": {
+     "mean": 4.3874475024154584,
+     "p50": 3.567332,
+     "p95": 9.692083,
+     "p99": 16.36095,
+     "max": 116.798544
+    },
+    "screen_render_ms": {},
+    "heap_used_mb": 8372,
+    "rss_kb": 13582312
+   },
+   "build_ms_native": [
+    179.059193,
+    25.42581,
+    29.421649,
+    12.976492,
+    20.926232,
+    9.280457
+   ],
+   "open_ms_native": [
+    272.002978,
+    36.439944,
+    45.347809,
+    22.563237,
+    35.230475,
+    16.195577
+   ],
+   "native": {
+    "frames": 1354,
+    "frame_ms": {
+     "mean": 7.412719771048744,
+     "p50": 6.424736,
+     "p95": 13.775858,
+     "p99": 24.888968,
+     "max": 62.030905
+    },
+    "screen_render_ms": {
+     "mean": 2.410450360885609,
+     "p50": 2.20216,
+     "p95": 3.823925,
+     "p99": 7.898704,
+     "max": 24.288717
+    },
+    "heap_used_mb": 8919,
+    "rss_kb": 13616816
+   }
+  },
+  "run-b-1080-fps": {
+   "window": "1920x1080",
+   "gui_scale": 3.0,
+   "build_ms_web": [
+    1.565891,
+    1.285723,
+    2.404
+   ],
+   "open_ms_web": [
+    3.417059,
+    3.715681,
+    5.025269
+   ],
+   "web_fps_60": {
+    "frames": 7064,
+    "frame_ms": {
+     "mean": 2.1297967139014724,
+     "p50": 1.831941,
+     "p95": 3.731792,
+     "p99": 6.435346,
+     "max": 36.960974
+    },
+    "screen_render_ms": {
+     "mean": 0.05058224444444444,
+     "p50": 0.006482,
+     "p95": 0.287011,
+     "p99": 0.656287,
+     "max": 2.336973
+    },
+    "heap_used_mb": 8922,
+    "rss_kb": 13593400
+   },
+   "web_fps_30": {
+    "frames": 7596,
+    "frame_ms": {
+     "mean": 1.980353897314376,
+     "p50": 1.680336,
+     "p95": 3.490247,
+     "p99": 6.009834,
+     "max": 56.947703
+    },
+    "screen_render_ms": {
+     "mean": 0.029459795577201527,
+     "p50": 0.005481,
+     "p95": 0.225425,
+     "p99": 0.526852,
+     "max": 2.635837
+    },
+    "heap_used_mb": 6611,
+    "rss_kb": 13589516
+   },
+   "web_fps_15": {
+    "frames": 6851,
+    "frame_ms": {
+     "mean": 2.188849960005838,
+     "p50": 1.904739,
+     "p95": 3.920377,
+     "p99": 6.895633,
+     "max": 19.310937
+    },
+    "screen_render_ms": {
+     "mean": 0.021661378867483944,
+     "p50": 0.006472,
+     "p95": 0.02659,
+     "p99": 0.347315,
+     "max": 1.490117
+    },
+    "heap_used_mb": 9473,
+    "rss_kb": 13523968
+   }
+  },
+  "run-b-1080": {
+   "window": "1920x1080",
+   "gui_scale": 3.0,
+   "in_world": true,
+   "rss_start_kb": 13555292,
+   "baseline": {
+    "frames": 3000,
+    "frame_ms": {
+     "mean": 3.345166648666667,
+     "p50": 2.898983,
+     "p95": 7.156415,
+     "p99": 10.049696,
+     "max": 38.640889
+    },
+    "screen_render_ms": {},
+    "heap_used_mb": 8345,
+    "rss_kb": 13539680
+   },
+   "build_ms_native": [
+    82.566976,
+    15.772278,
+    12.846716,
+    9.431802,
+    8.078893,
+    7.973164
+   ],
+   "open_ms_native": [
+    123.610523,
+    23.642608,
+    19.436223,
+    17.081516,
+    15.102056,
+    15.244194
+   ],
+   "native": {
+    "frames": 1810,
+    "frame_ms": {
+     "mean": 5.519907664088398,
+     "p50": 4.912787,
+     "p95": 9.934158,
+     "p99": 12.769401,
+     "max": 29.443329
+    },
+    "screen_render_ms": {
+     "mean": 1.9307047912755382,
+     "p50": 1.811153,
+     "p95": 3.124787,
+     "p99": 4.035183,
+     "max": 5.244092
+    },
+    "heap_used_mb": 9320,
+    "rss_kb": 13528920
+   },
+   "build_ms_web": [
+    4.126465,
+    0.756035,
+    0.857946,
+    0.935733,
+    0.801791,
+    0.799697
+   ],
+   "open_ms_web": [
+    20.236931,
+    3.3595,
+    3.47605,
+    4.587153,
+    3.338501,
+    3.166506
+   ],
+   "web": {
+    "frames": 3610,
+    "frame_ms": {
+     "mean": 2.781480381440443,
+     "p50": 2.466558,
+     "p95": 5.674542,
+     "p99": 7.913551,
+     "max": 30.199413
+    },
+    "screen_render_ms": {
+     "mean": 0.07046357712545001,
+     "p50": 0.017924,
+     "p95": 0.332466,
+     "p99": 0.740686,
+     "max": 1.197126
+    },
+    "heap_used_mb": 9008,
+    "rss_kb": 13582040
+   }
+  },
+  "run-b-720-fps": {
+   "window": "1280x720",
+   "gui_scale": 3.0,
+   "build_ms_web": [
+    15.278719,
+    1.27901,
+    1.063283
+   ],
+   "open_ms_web": [
+    21.778025,
+    5.389835,
+    3.79446
+   ],
+   "web_fps_60": {
+    "frames": 4670,
+    "frame_ms": {
+     "mean": 3.219853657815846,
+     "p50": 2.722971,
+     "p95": 6.806575,
+     "p99": 10.281073,
+     "max": 47.936485
+    },
+    "screen_render_ms": {
+     "mean": 0.04800209783772212,
+     "p50": 0.016912,
+     "p95": 0.199716,
+     "p99": 0.359537,
+     "max": 2.433465
+    },
+    "heap_used_mb": 6401,
+    "rss_kb": 13521512
+   },
+   "web_fps_30": {
+    "frames": 5138,
+    "frame_ms": {
+     "mean": 2.91840572148696,
+     "p50": 2.373783,
+     "p95": 6.428813,
+     "p99": 10.086817,
+     "max": 55.107036
+    },
+    "screen_render_ms": {
+     "mean": 0.031060405526366998,
+     "p50": 0.01073,
+     "p95": 0.144953,
+     "p99": 0.235233,
+     "max": 4.092982
+    },
+    "heap_used_mb": 8199,
+    "rss_kb": 13521252
+   },
+   "web_fps_15": {
+    "frames": 7006,
+    "frame_ms": {
+     "mean": 2.1464265034256353,
+     "p50": 1.856638,
+     "p95": 4.136564,
+     "p99": 6.880946,
+     "max": 26.816439
+    },
+    "screen_render_ms": {
+     "mean": 0.015939004852290568,
+     "p50": 0.006763,
+     "p95": 0.027572,
+     "p99": 0.159039,
+     "max": 3.266665
+    },
+    "heap_used_mb": 6481,
+    "rss_kb": 13525800
+   }
+  },
+  "run-b-720": {
+   "window": "1280x720",
+   "gui_scale": 3.0,
+   "in_world": true,
+   "rss_start_kb": 13671920,
+   "baseline": {
+    "frames": 2936,
+    "frame_ms": {
+     "mean": 3.4207166546321526,
+     "p50": 2.733831,
+     "p95": 7.234682,
+     "p99": 10.552333,
+     "max": 238.091756
+    },
+    "screen_render_ms": {},
+    "heap_used_mb": 8332,
+    "rss_kb": 13670924
+   },
+   "build_ms_native": [
+    74.233735,
+    21.527834,
+    16.049372,
+    19.40804,
+    10.192685,
+    25.69182
+   ],
+   "open_ms_native": [
+    143.606612,
+    34.198018,
+    26.8805,
+    27.608391,
+    19.000632,
+    172.650838
+   ],
+   "native": {
+    "frames": 1174,
+    "frame_ms": {
+     "mean": 8.534645406303236,
+     "p50": 7.289265,
+     "p95": 16.88706,
+     "p99": 27.691407,
+     "max": 82.692815
+    },
+    "screen_render_ms": {
+     "mean": 2.9498546987234042,
+     "p50": 2.640846,
+     "p95": 5.205378,
+     "p99": 8.989338,
+     "max": 34.237813
+    },
+    "heap_used_mb": 7262,
+    "rss_kb": 13548884
+   },
+   "build_ms_web": [
+    4.190676,
+    0.967874,
+    0.981199,
+    1.336599,
+    0.852366,
+    0.767306
+   ],
+   "open_ms_web": [
+    11.916404,
+    3.501518,
+    3.478394,
+    4.573007,
+    4.672444,
+    3.597288
+   ],
+   "web": {
+    "frames": 2021,
+    "frame_ms": {
+     "mean": 4.968559399307273,
+     "p50": 3.983195,
+     "p95": 11.495991,
+     "p99": 18.917826,
+     "max": 80.603528
+    },
+    "screen_render_ms": {
+     "mean": 0.0910456409495549,
+     "p50": 0.026139,
+     "p95": 0.245462,
+     "p99": 0.554064,
+     "max": 10.79957
+    },
+    "heap_used_mb": 7379,
+    "rss_kb": 13532728
+   }
+  }
+ },
+ "process_samples": [
+  {
+   "label": "a-world-idle-720-b",
+   "java_pss_mb": 13273,
+   "java_rss_mb": 13292,
+   "helpers": 0,
+   "helpers_pss_mb": 0,
+   "helpers_rss_mb": 0,
+   "total_pss_mb": 13273,
+   "helpers_cpu_pct": 0.0,
+   "java_cpu_pct": 148.8
+  },
+  {
+   "label": "a-world-idle-1080",
+   "java_pss_mb": 13086,
+   "java_rss_mb": 13104,
+   "helpers": 0,
+   "helpers_pss_mb": 0,
+   "helpers_rss_mb": 0,
+   "total_pss_mb": 13086,
+   "helpers_cpu_pct": 0.0,
+   "java_cpu_pct": 149.6
+  },
+  {
+   "label": "b-world-idle-warm-720",
+   "java_pss_mb": 13231,
+   "java_rss_mb": 13351,
+   "helpers": 7,
+   "helpers_pss_mb": 182,
+   "helpers_rss_mb": 520,
+   "total_pss_mb": 13413,
+   "helpers_cpu_pct": 0.3,
+   "java_cpu_pct": 230.8
+  },
+  {
+   "label": "b720-baseline",
+   "java_pss_mb": 13246,
+   "java_rss_mb": 13366,
+   "helpers": 7,
+   "helpers_pss_mb": 142,
+   "helpers_rss_mb": 461,
+   "total_pss_mb": 13388,
+   "helpers_cpu_pct": 0.7,
+   "java_cpu_pct": 180.5
+  },
+  {
+   "label": "b720-native",
+   "java_pss_mb": 13194,
+   "java_rss_mb": 13237,
+   "helpers": 8,
+   "helpers_pss_mb": 98,
+   "helpers_rss_mb": 256,
+   "total_pss_mb": 13292,
+   "helpers_cpu_pct": 0.4,
+   "java_cpu_pct": 252.1
+  },
+  {
+   "label": "b720-web",
+   "java_pss_mb": 13186,
+   "java_rss_mb": 13214,
+   "helpers": 8,
+   "helpers_pss_mb": 93,
+   "helpers_rss_mb": 221,
+   "total_pss_mb": 13279,
+   "helpers_cpu_pct": 19.3,
+   "java_cpu_pct": 261.1
+  },
+  {
+   "label": "b720fps-web60",
+   "java_pss_mb": 13188,
+   "java_rss_mb": 13205,
+   "helpers": 8,
+   "helpers_pss_mb": 102,
+   "helpers_rss_mb": 212,
+   "total_pss_mb": 13290,
+   "helpers_cpu_pct": 20.9,
+   "java_cpu_pct": 238.8
+  },
+  {
+   "label": "b720fps-web30",
+   "java_pss_mb": 13189,
+   "java_rss_mb": 13204,
+   "helpers": 8,
+   "helpers_pss_mb": 89,
+   "helpers_rss_mb": 197,
+   "total_pss_mb": 13278,
+   "helpers_cpu_pct": 10.1,
+   "java_cpu_pct": 236.8
+  },
+  {
+   "label": "b720fps-web15",
+   "java_pss_mb": 13192,
+   "java_rss_mb": 13207,
+   "helpers": 8,
+   "helpers_pss_mb": 89,
+   "helpers_rss_mb": 198,
+   "total_pss_mb": 13281,
+   "helpers_cpu_pct": 4.7,
+   "java_cpu_pct": 142.2
+  },
+  {
+   "label": "b-world-idle-after-720",
+   "java_pss_mb": 13196,
+   "java_rss_mb": 13213,
+   "helpers": 8,
+   "helpers_pss_mb": 91,
+   "helpers_rss_mb": 202,
+   "total_pss_mb": 13288,
+   "helpers_cpu_pct": 0.5,
+   "java_cpu_pct": 139.1
+  },
+  {
+   "label": "b-world-idle-warm-1080",
+   "java_pss_mb": 13168,
+   "java_rss_mb": 13240,
+   "helpers": 7,
+   "helpers_pss_mb": 151,
+   "helpers_rss_mb": 369,
+   "total_pss_mb": 13320,
+   "helpers_cpu_pct": 0.6,
+   "java_cpu_pct": 269.3
+  },
+  {
+   "label": "b1080-baseline",
+   "java_pss_mb": 13165,
+   "java_rss_mb": 13224,
+   "helpers": 7,
+   "helpers_pss_mb": 126,
+   "helpers_rss_mb": 325,
+   "total_pss_mb": 13292,
+   "helpers_cpu_pct": 0.5,
+   "java_cpu_pct": 170.4
+  },
+  {
+   "label": "b1080-native",
+   "java_pss_mb": 13175,
+   "java_rss_mb": 13234,
+   "helpers": 7,
+   "helpers_pss_mb": 129,
+   "helpers_rss_mb": 329,
+   "total_pss_mb": 13305,
+   "helpers_cpu_pct": 1.0,
+   "java_cpu_pct": 153.7
+  },
+  {
+   "label": "b1080-web",
+   "java_pss_mb": 13207,
+   "java_rss_mb": 13265,
+   "helpers": 7,
+   "helpers_pss_mb": 139,
+   "helpers_rss_mb": 339,
+   "total_pss_mb": 13346,
+   "helpers_cpu_pct": 16.0,
+   "java_cpu_pct": 151.5
+  },
+  {
+   "label": "b1080fps-web60",
+   "java_pss_mb": 13212,
+   "java_rss_mb": 13271,
+   "helpers": 7,
+   "helpers_pss_mb": 146,
+   "helpers_rss_mb": 348,
+   "total_pss_mb": 13358,
+   "helpers_cpu_pct": 19.8,
+   "java_cpu_pct": 214.5
+  },
+  {
+   "label": "b1080fps-web30",
+   "java_pss_mb": 13214,
+   "java_rss_mb": 13268,
+   "helpers": 7,
+   "helpers_pss_mb": 143,
+   "helpers_rss_mb": 339,
+   "total_pss_mb": 13357,
+   "helpers_cpu_pct": 10.0,
+   "java_cpu_pct": 217.6
+  },
+  {
+   "label": "b1080fps-web15",
+   "java_pss_mb": 13178,
+   "java_rss_mb": 13210,
+   "helpers": 7,
+   "helpers_pss_mb": 110,
+   "helpers_rss_mb": 235,
+   "total_pss_mb": 13289,
+   "helpers_cpu_pct": 5.4,
+   "java_cpu_pct": 215.1
+  },
+  {
+   "label": "b-world-idle-after-1080",
+   "java_pss_mb": 13175,
+   "java_rss_mb": 13203,
+   "helpers": 7,
+   "helpers_pss_mb": 103,
+   "helpers_rss_mb": 219,
+   "total_pss_mb": 13278,
+   "helpers_cpu_pct": 0.4,
+   "java_cpu_pct": 139.7
+  }
+ ]
+}
