@@ -113,6 +113,12 @@ rules: [Completability of the current tree](completability.md) (`make progressio
 5. `stage_progress = done milestones of the stage / milestones of the stage`, counted raw.
 6. Stage N+1 opens when `stage_progress(N) >= threshold(N)` **and** the module of N is complete.
 7. Unlocks of a milestone apply from the moment it is done, for the whole progression.
+8. Module deliveries count only for the module of the highest open stage, the one whose delivery
+   opens the next stage; the server rejects any other (`stage_not_current`). By design a module needs
+   items and machines unlocked at its own stage, as in Satisfactory, so delivering ahead is impossible
+   in normal play; the rule is a safety net against bugs and tampered clients (Brian, 21 Nov 2026).
+   The graph tool ([#28](https://github.com/Arffornia/docs/issues/28)) must prove that each stage's
+   module cannot be crafted before that stage opens.
 
 ### How a milestone is validated
 
