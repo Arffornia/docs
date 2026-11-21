@@ -135,7 +135,7 @@ are still to be checked.
 |---|---|---|---|---|
 | 1 | Tokens file and generator (CSS, Java, LSS) | Assets | Generated files checked in CI; light and dark | S |
 | 2 | Website and Keycloak on the generated tokens | Website, keycloak theme | Visual diff only where D1 changes colours | S |
-| 3 | Web stage-band component from the 017 snapshot | Website (or a shared UI package) | Playwright screenshot test | M |
+| 3 | Web stage-band component from the 017 snapshot | Website (or a shared UI package) | Playwright screenshot test. Viewer for the whole tree: [Website#151](https://github.com/Arffornia/Arffornia_Website/pull/151), `packages/progression-graph`, layout stored in the snapshot (`layout`, spec 017 schema) | M |
 | 4 | In-game stage band, native (LDLib2) | Mods | Client screenshot test; open time and frame time measured | M |
 | 5 | In-game stage band, MCEF/WebGUI, browser kept warm | Mods | Same screenshot; open time, memory, frame time, NixOS/macOS/Windows notes | M |
 | 5b | Launcher installs the Chromium binaries with the pack | Launcher, Provisioning | No download at game start; binaries hosted by Arffornia | S |
