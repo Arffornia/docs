@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Input for D2 (work item 6). The decision is Brian's. |
+| **Status** | Input for D2 (work item 6). D2 decided 21 Nov 2026: (a), see the [spec](../018-ui-framework.md). |
 | **Date** | 9 Nov 2026 |
 | **Code** | [Arffornia_Mods#60](https://github.com/Arffornia/Arffornia_Mods/pull/60) (draft, not for main) |
 | **Spec** | [018 UI framework](../018-ui-framework.md), work items 4 and 5 |
@@ -128,3 +128,16 @@ Spec 018 said (a) wins "if its memory and frame cost stay small". Measured here:
 - Memory on an 8 GB player machine with the full pack.
 - GUI scales 2 and 4, and a 1080p window: native text sharpness.
 - Clicking and scrolling in the web screen (not wired in the prototype).
+
+## Alternatives looked at after the report
+
+Asked on 21 Nov 2026: do lighter engines exist, and what do other mods do?
+
+- Most mods draw their screens natively with HTML/CSS-like toolkits (Elementa, owo-ui, ModernUI,
+  LabyMod LSS, LDLib2). Mods that embed a real Chromium (WebDisplays, WebGUI, LiquidBounce, Graphene)
+  all pay the same 150 to 200 MB floor, which tuning does not remove.
+- Ultralight (WebKit fork) uses 5 to 10 times less memory by its vendor's numbers, but it is
+  proprietary, its free tier has no JS JIT and caps at 60 fps, and its Java bindings are archived
+  or pre-release. RmlUi (MIT, C++) has no JS and needs our own binding. Blitz and Servo are too young.
+- CEF tuning cuts CPU, not memory: a capped windowless frame rate, one browser and one origin for
+  every screen, the browser hidden when the screen closes. Single-process mode is not supported.
