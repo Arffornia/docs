@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted with open points (D1 decided 8 Nov 2026; D2 after the prototype) |
+| **Status** | Accepted (D1 decided 8 Nov 2026, D2 decided 21 Nov 2026) |
 | **Milestone** | M3 · Gameplay foundations |
 | **Repos** | Arffornia_Assets (tokens), Arffornia_Mods (in-game UI), Arffornia_Website, Arffornia_Launcher_V.5.2, keycloak-theme-arffornia |
 | **Related** | Initiative [#32](https://github.com/Arffornia/docs/issues/32) · [007](007-loading-and-title-screen.md) (title screen, D9 web menus) · [017](017-progression-model/spec.md) (the graph data) · Launcher [#89](https://github.com/Arffornia/Arffornia_Launcher_V.5.2/issues/89) |
@@ -76,7 +76,7 @@ ship a mod, so we do not need them.
 |---|---|---|
 | Machine GUIs, inventories, HUD, Noyau, Space Elevator | Native (LDLib2) | Item slots, instant open, no download |
 | Title and loading screens | Native (spec 007) | Must open before anything else; the early window cannot host a browser |
-| Progression graph, wiki pages, shop, news | **Decision D2** | Content screens, where "same as the website" matters most |
+| Progression graph, wiki pages, shop, news | **Web (D2 a)** | Content screens, where "same as the website" matters most |
 
 ### 3 · One graph, two renderers that cannot drift
 
@@ -125,7 +125,7 @@ are still to be checked.
 | # | Question | Options | Recommendation |
 |---|---|---|---|
 | D1 | One player-facing identity | (a) the launcher's: plum, lavender, `#ff7300`, Montserrat + Chakra Petch for display, teal as the second accent; Keycloak moves to it; tools (GitHub, docs) keep slate and `#e0703c` | **Decided (Brian, 8 Nov 2026): (a)** |
-| D2 | Graph, wiki, shop in game | (a) web through MCEF/WebGUI, the website's own component, Chromium installed by the launcher and kept warm; (b) native LDLib2 renderer from the shared layout; (c) native first, MCEF later for wiki and shop only | **Prototype both (a) and (b) on one stage band, then decide on numbers** ([report](018-ui-framework/prototype-report.md)). With the launcher prefetch and a warm browser, (a) is instant too; it wins if its memory and frame cost stay small, because it is one renderer instead of two |
+| D2 | Graph, wiki, shop in game | (a) web through MCEF/WebGUI, the website's own component, Chromium installed by the launcher and kept warm; (b) native LDLib2 renderer from the shared layout; (c) native first, MCEF later for wiki and shop only | **Decided (Brian, 21 Nov 2026): (a)**, one renderer for the website and the game. The ~190 MB browser floor is about 2 % of the full pack client (13.6 GB). Conditions before shipping: frame time and browser CPU measured on a real GPU, WebGUI started on Windows. Tuning: one shared browser and one origin for every content screen, frame rate capped for static pages, browser paused when the screen closes. If the GPU numbers are bad, fall back to (c) |
 | D3 | Native library | (a) LDLib2; (b) TesseraUI; (c) owo-ui | **(a)**: maintained by a large mod team, stylesheets + data binding + debugger, NeoForge 1.21.1 |
 | D4 | Website front-end for the graph and editor | (a) a TypeScript component library shared by the website and the launcher (Vue, as the launcher); (b) Blade + vanilla JS as today | **(a)**: the launcher already uses Vue; one component library for the graph, the shop cards and the wiki |
 
@@ -139,5 +139,6 @@ are still to be checked.
 | 4 | In-game stage band, native (LDLib2) | Mods | Client screenshot test; open time and frame time measured | M |
 | 5 | In-game stage band, MCEF/WebGUI, browser kept warm | Mods | Same screenshot; open time, memory, frame time, NixOS/macOS/Windows notes | M |
 | 5b | Launcher installs the Chromium binaries with the pack | Launcher, Provisioning | No download at game start; binaries hosted by Arffornia | S |
-| 6 | Report and D2 decision | docs | Numbers from 4 and 5, Brian's pick | S |
+| 6 | Report and D2 decision | docs | Numbers from 4 and 5, Brian's pick: (a), 21 Nov 2026 | S |
+| 6b | Web screens on a real GPU and on Windows | Mods | Frame time and browser CPU with the band open, capped and uncapped; WebGUI starts on Windows with the pre-placed runtime | S |
 | 7 | Launcher on the generated tokens | Launcher | Part of #89 | S |
