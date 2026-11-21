@@ -159,6 +159,7 @@ milestone removed in a later snapshot stays in history and stops counting.
 
 - [`progression-model.schema.json`](progression-model.schema.json) (JSON Schema 2020-12) lives in this folder and is vendored by the
   website, the mod tests and the graph tool. The current tree, converted, is its first fixture.
+- A snapshot may carry its viewer `layout` (`arffornia.progression-layout/1`): node positions, routed links and stage columns computed once (spec 018 §3), so the website and the game draw the same graph without laying it out.
 - The website exports a snapshot as one JSON document. The datapack of spec 001 is generated from
   the same snapshot: unlocks become recipe overrides, validations become hidden advancements.
 

@@ -103,6 +103,28 @@ class SchemaTest(unittest.TestCase):
 
         self.assertFalse(self.validator.is_valid(model))
 
+    def layout(self):
+        key = self.model["milestones"][0]["key"]
+        graph = self.model["milestones"][0]["graph"]
+        return {
+            "format": "arffornia.progression-layout/1",
+            "node": {"width": 112, "height": 84, "tile": 48},
+            "columns": [{"stage": 1, "x": 0, "width": 168}],
+            "graphs": {graph: {"height": 140, "nodes": {key: {"x": 28, "y": 40}}, "edges": []}},
+        }
+
+    def test_accepts_a_snapshot_with_its_viewer_layout(self):
+        model = copy.deepcopy(self.model)
+        model["layout"] = self.layout()
+
+        self.assertEqual([], [e.message for e in self.validator.iter_errors(model)])
+
+    def test_rejects_a_layout_of_an_unknown_format(self):
+        model = copy.deepcopy(self.model)
+        model["layout"] = dict(self.layout(), format="something-else")
+
+        self.assertFalse(self.validator.is_valid(model))
+
 
 if __name__ == "__main__":
     unittest.main()

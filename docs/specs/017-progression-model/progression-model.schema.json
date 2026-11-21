@@ -13,9 +13,32 @@
     "source": {"type": "string", "description": "Where the snapshot came from, e.g. a backup file or an editor session."},
     "stages": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/stage"}},
     "graphs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/graph"}},
-    "milestones": {"type": "array", "items": {"$ref": "#/$defs/milestone"}}
+    "milestones": {"type": "array", "items": {"$ref": "#/$defs/milestone"}},
+    "layout": {"$ref": "#/$defs/graphLayout"}
   },
   "$defs": {
+    "point": {"type": "object", "required": ["x", "y"], "additionalProperties": false, "properties": {"x": {"type": "number"}, "y": {"type": "number"}}},
+    "graphLayout": {
+      "type": "object",
+      "description": "Viewer layout computed once per snapshot (spec 018 §3), never by a client: node positions relative to their graph row, routed links, shared stage columns. Produced by packages/progression-graph/src/layout.ts in Arffornia_Website.",
+      "required": ["format", "node", "columns", "graphs"],
+      "additionalProperties": false,
+      "properties": {
+        "format": {"const": "arffornia.progression-layout/1"},
+        "node": {"type": "object", "required": ["width", "height", "tile"], "additionalProperties": false, "properties": {"width": {"type": "number", "exclusiveMinimum": 0}, "height": {"type": "number", "exclusiveMinimum": 0}, "tile": {"type": "number", "exclusiveMinimum": 0}}},
+        "columns": {"type": "array", "items": {"type": "object", "required": ["stage", "x", "width"], "additionalProperties": false, "properties": {"stage": {"type": "integer", "minimum": 1}, "x": {"type": "number"}, "width": {"type": "number", "exclusiveMinimum": 0}}}},
+        "graphs": {"type": "object", "additionalProperties": {
+          "type": "object", "required": ["height", "nodes", "edges"], "additionalProperties": false,
+          "properties": {
+            "height": {"type": "number", "minimum": 0},
+            "nodes": {"type": "object", "additionalProperties": {"$ref": "#/$defs/point"}},
+            "edges": {"type": "array", "items": {"type": "object", "required": ["from", "to", "points"], "additionalProperties": false, "properties": {
+              "from": {"$ref": "#/$defs/key"}, "to": {"$ref": "#/$defs/key"},
+              "points": {"type": "array", "items": {"$ref": "#/$defs/point"}}, "junctions": {"type": "array", "items": {"$ref": "#/$defs/point"}}}}}
+          }
+        }}
+      }
+    },
     "key": {"type": "string", "pattern": "^[a-z0-9_]+(/[a-z0-9_]+)?$", "maxLength": 128},
     "itemId": {"type": "string", "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$", "description": "Item id, or a tag when it starts with #."},
     "text": {
