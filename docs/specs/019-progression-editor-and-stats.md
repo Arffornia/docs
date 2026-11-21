@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft: needs decisions |
+| **Status** | Accepted (decisions by Brian, 21 Nov 2026) |
 | **Milestone** | M3 · Gameplay foundations |
 | **Repos** | Arffornia_Website (editor, player view, stats, API), Arffornia_Mods (events, in-game editing commands), docs (graph tool) |
 | **Related** | Initiatives [#28](https://github.com/Arffornia/docs/issues/28) (graph tool), [#32](https://github.com/Arffornia/docs/issues/32) (UI) · [017](017-progression-model/spec.md) (model, draft and publish) · [018](018-ui-framework.md) (one graph component, D2 web) |
@@ -43,7 +43,7 @@ Page `/stages` (`public/js/stages.js`, `StagesController`), admin role, API unde
 | Modes | View, add node, delete node, link, unlink by clicking a link, move by dragging | Same tools, plus multi-select and keyboard shortcuts |
 | Milestone panel | Click a node: name, description, stage, reward points, unlocks and requirements with icons | Same panel, plus validation type, key items, effort, power, checks |
 | Milestone edit | Edit, save, cancel: name, description, points, stage number | Same, inside the draft |
-| Unlocks | Add, edit, delete: item id, display name, image path, recipes to ban, shop price | Same, with an item picker from the recipe dump; shop price to confirm (question Q3) |
+| Unlocks | Add, edit, delete: item id, display name, image path, recipes to ban, shop price | Same, with an item picker from the recipe dump; shop price removed (Q3) |
 | Recipe of an unlock | Ingredients, results, energy, time | Same, with a recipe picker that shows the real recipe from the dump |
 | Requirements | Add, edit, delete: item id, display name, image path, amount | Same, with the item picker |
 | Data | Export and import the whole tree as JSON | Export and import a snapshot as JSON (017 schema) |
@@ -134,8 +134,8 @@ Priorities: **must** for the first release, **should** soon after, **could** lat
 | Open a stage by hand, with a reason | should | For a stuck player after a bad publish |
 | Per-progression history of events and moderator actions | must | |
 
-Moderation needs a role. `progression_editor` stays the game server's service role; human
-moderators get a new `progression_moderator` role (question Q2).
+Moderation needs a role. `progression_editor` stays the game server's service role; there are no human
+moderators yet, so only admins moderate for now; a dedicated role is deferred (Q2).
 
 ## Player view on the website
 
@@ -145,7 +145,7 @@ moderators get a new `progression_moderator` role (question Q2).
 | Stage header: `done / total`, percentage, Noyau module and its delivery bar | must | 017 player experience |
 | Next milestones: what I can do now | must | Available milestones sorted by stage |
 | Team view: who did what | should | `completed_by` |
-| Public or private progress, chosen by the player | should | Default to confirm (question Q4) |
+| Public or private progress, chosen by the player | should | Public by default (Q4) |
 | Compare with a friend or the server average | could | |
 
 ## Statistics
@@ -211,13 +211,13 @@ The current admin routes (`graphs`, `stages`, `milestones`, `milestone-closures`
 | Stats | Seeded events give known funnel and stall numbers |
 | Player view | Screenshot test shared with the in-game component (018) |
 
-## Decisions needed
+## Decisions
 
-| # | Question | Recommendation |
+| # | Question | Decision (Brian, 21 Nov 2026) |
 |---|---|---|
 | Q1 | Where does the editor live: the website admin, or a separate admin app | **The website admin**: same login, same component library (018 D4) |
-| Q2 | Who may moderate progressions | **A new `progression_moderator` role**, admins have it too |
-| Q3 | Does an unlock still have a shop price | **Remove it**: no currency in the gating (docs#27). Keep it only if the shop must sell unlocks |
+| Q2 | Who may moderate progressions | **Deferred**: no moderators yet, admins only. Add a `progression_moderator` role when the first moderator joins |
+| Q3 | Does an unlock still have a shop price | **Removed**: no currency in the gating (docs#27) |
 | Q4 | Player progress public by default | **Public**, with a switch to private |
 | Q5 | Playtime tracking for stats | **Yes**, one daily playtime row per player sent by the mod; otherwise stats use wall-clock time |
 
