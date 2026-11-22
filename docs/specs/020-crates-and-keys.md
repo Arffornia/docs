@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft: needs decisions |
+| **Status** | Accepted (decisions by Brian, 22 Nov 2026) |
 | **Milestone** | M3 · Gameplay foundations |
 | **Repos** | Arffornia_Mods (key item, crate block, opening, calendar screen), Arffornia_Website (reward type, streak calendar API, profile), docs |
 | **Related** | [008](008-economy-and-rewards.md) (rewards, shop, currency) · [010](010-vote-sites.md) (vote rewards) · [018](018-ui-framework.md) (native screens vs web UI) |
@@ -163,12 +163,12 @@ The join title (Mods#75) changes to say what to do: "Day 4 · a key is waiting",
 
 | # | Question | Options | Recommendation |
 |---|---|---|---|
-| D1 | Can keys be given or traded | (a) bound to the player; (b) tradeable; (c) bound for streak and vote, tradeable for shop keys | **(a)** at launch: no key market and no alt farming. Revisit with 008 D6 (player market) |
-| D2 | Where keys can be opened | (a) only at a crate block; (b) at a crate, or anywhere with a "key menu" | **(a)**: going to the crates is the point. Admins place a crate on test worlds until the spawn exists |
-| D3 | Streak cycle | (a) keep today's tiers (more boxes every 7 days); (b) weekly cycle with a day-7 bonus and a day-28 legendary key | **(b)**: it is what the calendar shows best |
-| D4 | Show odds | (a) yes, exact percentages; (b) only the list of items | **(a)**: honest, and keys bought with currency are close to the paid loot boxes the Usage Guidelines care about |
+| D1 | Can keys be given or traded | (a) bound to the player; (b) tradeable; (c) bound for streak and vote, tradeable for shop keys | **Decided (a)** (Brian, 22 Nov) at launch: no key market and no alt farming. Revisit with 008 D6 (player market) |
+| D2 | Where keys can be opened | (a) only at a crate block; (b) at a crate, or anywhere with a "key menu" | **Decided (a)** (Brian, 22 Nov): going to the crates is the point. Admins place a crate on test worlds until the spawn exists |
+| D3 | Streak cycle | (a) keep today's tiers (more boxes every 7 days); (b) weekly cycle with a day-7 bonus and a day-28 legendary key | **Decided (b)** (Brian, 22 Nov): it is what the calendar shows best |
+| D4 | Show odds | (a) yes, exact percentages; (b) only the list of items | **Decided (a)** (Brian, 22 Nov): honest, and keys bought with currency are close to the paid loot boxes the Usage Guidelines care about |
 | D5 | Claim keys on join automatically | (a) yes, keys go straight into the inventory on join; (b) keep `/arffornia shop claim_reward` | **Decided (a)** (Brian, 22 Nov): on join when they fit, otherwise with the command once there is room; never dropped (see "Inventory room") |
-| D6 | Announce rare rolls to the server | (a) yes, items marked rare in the crate file; (b) no | **(a)** |
+| D6 | Announce rare rolls to the server | (a) yes, items marked rare in the crate file; (b) no | **Decided (a)** (Brian, 22 Nov) |
 | D7 | Opening animation | (a) native in-world; (b) a GUI roulette | **Decided (a)** (Brian, 22 Nov): the "Opening sequence" above |
 
 ## Testing
