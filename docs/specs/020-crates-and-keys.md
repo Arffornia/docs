@@ -76,14 +76,61 @@ player stands in the streak and what each day gives.
 - A **crate block** `arffornia:crate`, with a block entity that names the crate id. Only admins
   can place, break or change it. It has no inventory.
 - **Opening:** the player right-clicks the crate with a matching key. The server checks the
-  key, the owner and the free inventory room, consumes one key, rolls the loot table, and gives the
-  loot. If the inventory is too full for the loot, the key is not consumed and the player gets a
-  message. Everything happens on the server, so a client cannot choose the result.
-- **Animation:** a native in-world effect: the lid opens, the items spin above the crate for
-  about two seconds, then particles and a sound play. The result is also written in the chat for
-  the record. A rare roll is announced to the whole server (D6).
+  key and the owner, rolls the loot table, and checks that **the whole roll fits** in the free
+  inventory room. Only then does it consume one key. If it does not fit, nothing is consumed and the
+  player reads "Your inventory is full: free N slots". Everything happens on the server, so a client
+  cannot choose the result.
+- **Animation:** see "Opening sequence" below. A rare roll is announced to the whole server (D6).
 - **Preview:** right-click without a key, or sneak + right-click, opens a native screen with every
   possible item and its odds, computed from the loot table weights (D4).
+
+### Opening sequence
+
+The result is rolled and the key consumed **before** the show starts: the animation only reveals it.
+The loot goes into the inventory at the end of the sequence. If the player leaves or dies
+during the sequence, the loot is given right away, or on the next join if they left. Nothing drops.
+
+| Time | What the player sees and hears |
+|---|---|
+| 0.0 s | The key flies from the hand into the lock, turns, a heavy click. The crate shakes and its seams glow in the crate's colour |
+| 0.5 s | Charge: glyph particles spiral into the crate, a light beam rises from it, a note rises in pitch. The beam is white for common crates, blue, purple, then gold for the legendary crate |
+| 1.5 s | Roulette: the lid lifts and the crate's possible items cycle above it as 3D items, fast at first, then slowing down with a tick on each change, like a slot machine. It lasts about 3 s |
+| 4.5 s | Reveal: the roulette stops on the item, the lid bursts open, and a firework burst fires in the rarity colour. The item grows and floats over the crate with its name and count |
+| 5.5 s | The item flies into the player with the pickup sound. A line in the chat records it |
+
+Rare and legendary rolls add more:
+
+- **Rare:** a coloured shockwave ring on the ground and a deeper sound.
+- **Legendary:** the beam turns gold and goes up to the sky, totem particles fall, a thunder
+  sound plays with no lightning, and the opener gets a screen title. The whole server gets a chat
+  line with the item, and hovering it shows the item (D6).
+
+Other details:
+
+- Other players near the crate see the whole sequence, which makes the spawn feel alive.
+- Sneak + right-click while the roulette turns skips to the reveal, for players who open many
+  keys.
+- A crate runs one sequence at a time. A second player gets "This crate is busy" until it ends,
+  about 6 s. The spawn has several crates of each kind if crowds become a problem.
+- The client side is a block entity renderer and a particle preset in the mod. The server sends
+  one packet with the roulette items, the result and the rarity, so every viewer sees the same show.
+
+### Inventory room, for every reward
+
+The rule applies to keys, crates and shop items: **a reward is given only when all of it fits in
+the inventory, and nothing is ever dropped.**
+
+- On join, keys go straight into the inventory when they fit (D5). What does not fit stays
+  pending, and the player reads "Your inventory is full: free N slots, then use
+  /arffornia shop claim_reward".
+- `/arffornia shop claim_reward` with a full inventory gives nothing and says how many slots to
+  free. Rewards that fit are given, and the rest wait.
+- **Change from today:** `RewardPlanner` gives a reward larger than the whole inventory (36
+  slots) when the inventory is empty, and the overflow drops at the player's feet. That is
+  removed. The website refuses to create a reward that needs more than 36 slots, checked by
+  `RewardCatalog`. The mod keeps such a reward pending and logs it, and never drops any of it.
+- A `lucky_box` roll is checked like a crate roll: roll first, check that it fits, then
+  claim.
 
 ### Streak calendar
 
@@ -120,9 +167,9 @@ The join title (Mods#75) changes to say what to do: "Day 4 · a key is waiting",
 | D2 | Where keys can be opened | (a) only at a crate block; (b) at a crate, or anywhere with a "key menu" | **(a)**: going to the crates is the point. Admins place a crate on test worlds until the spawn exists |
 | D3 | Streak cycle | (a) keep today's tiers (more boxes every 7 days); (b) weekly cycle with a day-7 bonus and a day-28 legendary key | **(b)**: it is what the calendar shows best |
 | D4 | Show odds | (a) yes, exact percentages; (b) only the list of items | **(a)**: honest, and keys bought with currency are close to the paid loot boxes the Usage Guidelines care about |
-| D5 | Claim keys on join automatically | (a) yes, keys go straight into the inventory on join; (b) keep `/arffornia shop claim_reward` | **(a)** for keys: a key takes one slot and the opening is the moment. Shop items keep the command |
+| D5 | Claim keys on join automatically | (a) yes, keys go straight into the inventory on join; (b) keep `/arffornia shop claim_reward` | **Decided (a)** (Brian, 22 Nov): on join when they fit, otherwise with the command once there is room; never dropped (see "Inventory room") |
 | D6 | Announce rare rolls to the server | (a) yes, items marked rare in the crate file; (b) no | **(a)** |
-| D7 | Opening animation | (a) native in-world (lid, spinning items, particles); (b) a GUI roulette | **(a)**: no web UI needed (018 keeps game-world effects native) and it is visible to other players at spawn |
+| D7 | Opening animation | (a) native in-world; (b) a GUI roulette | **Decided (a)** (Brian, 22 Nov): the "Opening sequence" above |
 
 ## Testing
 
@@ -131,6 +178,9 @@ The join title (Mods#75) changes to say what to do: "Day 4 · a key is waiting",
 | A key reward is delivered once | Mod GameTest, the same pattern as `RewardDeliveryGameTests` |
 | A crate consumes exactly one key and gives the loot | GameTest: key in hand, use the crate, assert one key less and the loot in the inventory |
 | Full inventory keeps the key | GameTest |
+| A reward that does not fit stays pending, nothing is dropped | GameTest, including a reward of more than 36 slots |
+| The website refuses a reward over 36 slots | Website unit test on `RewardCatalog` |
+| Leaving during the opening sequence still gives the loot | GameTest |
 | Another player's key is refused | GameTest |
 | Odds in the preview match the loot table | Unit test on the odds calculation, with a fixture loot table |
 | Calendar API shape and week contents | Website feature test, from `config/rewards.php` |
@@ -149,7 +199,8 @@ The join title (Mods#75) changes to say what to do: "Day 4 · a key is waiting",
 | 1 | `key` reward type and streak calendar API | Website | Feature tests; config flag `rewards.streak.as_keys` | S |
 | 2 | `crate_key` item and crate definitions | Mods | Keys delivered by a claim, bound to the player, model per crate | M |
 | 3 | Crate block: opening and refusals | Mods | GameTests above | M |
-| 4 | Opening animation, rare roll announcement | Mods | Seen on the slot by Brian | S |
+| 4 | Opening sequence, rare roll announcement | Mods | Seen on the slot by Brian; skip and busy work | M |
+| 4b | No drop: remove the 36-slot overflow, 36-slot limit on the website | Mods, Website | Tests above | S |
 | 5 | Preview and streak calendar screens | Mods | Odds match the loot table; calendar matches the API | M |
 | 6 | Weekly streak cycle (D3), auto-claim of keys on join (D5) | Website, Mods | Tests above | S |
 | 7 | Shop page lists crates with previews | Website | Screenshot test | S |
