@@ -29,6 +29,7 @@ class Finding:
     code: str
     subject: str
     message: str
+    related: tuple[str, ...] = ()
 
 
 def slug(text: str) -> str:
@@ -179,13 +180,15 @@ def lint(model: dict) -> list[Finding]:
         for required in milestone["requires"]:
             parent = by_key.get(required)
             if parent is None:
-                findings.append(Finding("error", "unknown_requirement", key, f"requires {required}, which does not exist"))
+                findings.append(Finding("error", "unknown_requirement", key, f"requires {required}, which does not exist",
+                                        (required,)))
                 continue
             if parent["stage"] > milestone["stage"]:
                 findings.append(Finding("error", "requires_later_stage", key,
-                                        f"stage {milestone['stage']} requires {required} from stage {parent['stage']}"))
+                                        f"stage {milestone['stage']} requires {required} from stage {parent['stage']}",
+                                        (required,)))
             if parent["graph"] != milestone["graph"]:
-                findings.append(Finding("info", "cross_graph", key, f"requires {required} from another graph"))
+                findings.append(Finding("info", "cross_graph", key, f"requires {required} from another graph", (required,)))
 
     findings.extend(_cycles(by_key))
 
@@ -206,7 +209,7 @@ def _cycles(by_key: dict[str, dict]) -> list[Finding]:
                 continue
             if state.get(required) == "open":
                 cycle = path[path.index(required):] + [required] if required in path else [key, required]
-                findings.append(Finding("error", "cycle", key, " -> ".join(cycle)))
+                findings.append(Finding("error", "cycle", key, " -> ".join(cycle), tuple(cycle[:-1])))
             elif required not in state:
                 visit(required, path + [required])
         state[key] = "done"

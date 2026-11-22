@@ -179,7 +179,7 @@ class CheckTest(unittest.TestCase):
         leaks = rg.check(g, m)["leaks"]
 
         # Assert
-        self.assertEqual([{"item": "mod:gear", "recipe": "gear_alt"}], leaks)
+        self.assertEqual([{"item": "mod:gear", "recipe": "gear_alt", "unlocked_by": ["m/gears"]}], leaks)
 
     def test_reports_an_unlock_whose_recipe_needs_itself(self):
         # Arrange

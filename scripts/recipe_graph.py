@@ -24,6 +24,7 @@ from dataclasses import dataclass, field, asdict
 ITEM, FLUID, CHEMICAL = 0, 1, 2
 CRAFTER = "arffornia:crafter_block"
 INVENTORY = "minecraft:crafting_2x2"
+SELF_DELIVERY = "the milestone asks to deliver an item it unlocks itself"
 
 # Recipe type -> the machine a player needs. None: no machine (hand, in-world, any tank).
 # Types missing here fall back to a name match and are listed as "guessed" in the report.
@@ -259,10 +260,11 @@ def compact(dump: pathlib.Path) -> dict:
     grid = {"minecraft:crafting_shaped", "minecraft:crafting_shapeless"}
     types: list[str] = []
     type_idx: dict[str, int] = {}
-    recipes = []
+    recipes, skipped = [], []
     for line in (dump / "recipes.jsonl").open(encoding="utf-8"):
         r = json.loads(line)
         if skip_type.search(r["serializer"]) or skip_type.search(r["type"]):
+            skipped.append(r["id"])
             continue
         j = r.get("json") or {}
         if r["serializer"] in grid or (r["type"].startswith("minecraft:") and r["ingredients"]) or not j:
@@ -283,6 +285,7 @@ def compact(dump: pathlib.Path) -> dict:
         in_e = [e for e in (enc(s) for s in ins) if e]
         out_e = [e for e in (enc(s) for s in outs) if e]
         if not out_e or not in_e:
+            skipped.append(r["id"])
             continue
         rtype = INVENTORY if _fits_inventory(r) else r["type"]
         if rtype not in type_idx:
@@ -304,7 +307,8 @@ def compact(dump: pathlib.Path) -> dict:
         if machine and not machines:
             source = "missing"
         type_rows.append([t, [index[(ITEM, m)] for m in machines], source])
-    return {"entries": entries, "alts": alts_tab, "types": type_rows, "recipes": recipes, "tags": tags}
+    return {"entries": entries, "alts": alts_tab, "types": type_rows, "recipes": recipes, "tags": tags,
+            "skipped_recipes": sorted(skipped)}
 
 
 def _fits_inventory(recipe: dict) -> bool:
@@ -577,7 +581,7 @@ def _blocked(pack: Pack, milestone: dict, done: frozenset[str]) -> dict[str, lis
     blocked = {**_missing(pack, deliver, done - {key}), **_missing(pack, unlocked, done | {key})}
     for x in deliver:
         if pack.ids[x] in blocked and key in pack.gated.get(x, []):
-            blocked[pack.ids[x]] = [Blocker(pack.ids[x], "the milestone asks to deliver an item it unlocks itself")]
+            blocked[pack.ids[x]] = [Blocker(pack.ids[x], SELF_DELIVERY)]
     return blocked
 
 
@@ -646,7 +650,8 @@ def check(graph: dict, model: dict) -> dict:
 
     all_done, none_done = pack.reach(frozenset(pack.milestones)), pack.reach(frozenset())
     gated = sorted(pack.gated)
-    leaks = [{"item": pack.ids[x], "recipe": pack.leak_recipe(x)} for x in gated if none_done[x]]
+    leaks = [{"item": pack.ids[x], "recipe": pack.leak_recipe(x), "unlocked_by": pack.gated[x]}
+             for x in gated if none_done[x]]
     never = [{"item": pack.ids[x], "unlocked_by": pack.gated[x]} for x in gated if not all_done[x]]
 
     backward = []
@@ -664,13 +669,18 @@ def check(graph: dict, model: dict) -> dict:
                 unlockers = {k for found in _blocked(pack, parent_row, own).values() for b in found for k in b.unlocked_by}
                 reverse = bool(unlockers & ({m["key"]} | skipped))
                 fix = (f"reverse it: `{parent}` requires `{m['key']}`" if reverse else "drop the link")
+                action = {"action": "reverse_requires" if reverse else "remove_requires", "milestone": m["key"],
+                          "requires": parent}
             else:
                 movable = all(pack.milestones[k]["stage"] <= m["stage"] for k in anc[parent])
                 moved = run({**parent_row, "stage": m["stage"]}, anc[parent]) if movable else None
-                fix = (f"move `{parent}` to stage {m['stage']}" if moved and moved.status != "unreachable"
-                       else f"move `{m['key']}` to stage {parent_row['stage']}")
+                target, stage = ((parent, m["stage"]) if moved and moved.status != "unreachable"
+                                 else (m["key"], parent_row["stage"]))
+                fix = f"move `{target}` to stage {stage}"
+                action = {"action": "move_stage", "milestone": target, "stage": stage}
             backward.append({"milestone": m["key"], "stage": m["stage"], "requires": parent,
-                             "requires_stage": parent_row["stage"], "needed": parent in blocking, "fix": fix})
+                             "requires_stage": parent_row["stage"], "needed": parent in blocking, "fix": fix,
+                             "fix_action": action})
 
     rows = list(results.values())
     return {

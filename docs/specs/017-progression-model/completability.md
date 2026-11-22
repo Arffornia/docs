@@ -67,6 +67,56 @@ not recipes. Some "never craftable" items may come from such a source (cyanite s
 Extreme Reactors reprocessor multiblock). Each new source is one line in `EXTRA_SOURCES` or
 `WORLD_ITEMS`.
 
+## Editor checks (spec 019)
+
+`scripts/progression_check.py` runs the lint of spec 017 and this check, and writes one JSON
+document for the badges of the editor ([spec 019](../019-progression-editor-and-stats.md),
+"Inline checks from the graph tool"). `make progression-check DUMP=<dir>` writes it to
+`/tmp/arffornia-checks.json`. Same input, same bytes out.
+
+```json
+{
+ "format": "arffornia.progression-check/1",
+ "completability": "done",
+ "summary": {"milestones": 194, "ok": 94, "warning": 80, "error": 20, "by_code": {"leak": 21}},
+ "milestones": {
+  "mekanism/mekanism_fundamentals": {
+   "badge": "error", "graph": "mekanism", "stage": 1,
+   "findings": [{"severity": "error", "code": "not_completable", "item": "mekanism:pressurized_reaction_chamber",
+                 "message": "...", "missing": [{"item": "mekanism:basic_chemical_tank", "reason": "gated",
+                 "unlocked_by": ["mekanism/mekanism_basic_tank"]}]}]
+  }
+ },
+ "stages": {"8": {"badge": "error", "findings": [{"code": "threshold_unreachable", "...": "..."}]}},
+ "pack": []
+}
+```
+
+Every milestone has an entry. The badge is the worst severity of its findings; `info` never
+changes it. A finding may carry `fixes`, actions the editor can offer or show as ghost links:
+`add_requires`, `remove_requires`, `reverse_requires` (the other milestone requires this one),
+`move_stage`, `ban_recipe`.
+
+| Code | Severity | Meaning |
+|---|---|---|
+| `cycle`, `unknown_requirement`, `duplicate_key` | error | The requires graph is broken; completability is skipped |
+| `requires_later_stage` | error | Backward link, with `needed_by_recipes` and the fix |
+| `not_completable` | error | An unlock or delivery cannot be made with the stages open at that point |
+| `delivers_own_unlock` | error | Asks to deliver an item it unlocks itself |
+| `never_craftable` | error | Unlocks an item no player can make, even with every milestone done |
+| `unknown_item` | error | An unlock or delivery is not in the recipe dump |
+| `threshold_unreachable` | error (stage) | Fewer completable milestones than the stage threshold |
+| `missing_link` | warning | Completable only through a milestone it does not require |
+| `leak` | warning | A recipe that is not banned still makes the gated item |
+| `unknown_ban` | warning, info | A banned recipe id is not in the dump. Info when another ban of the same unlock exists |
+| `no_validation` | warning | Nothing completes the milestone |
+| `cross_graph`, `placeholder_description` | info | |
+
+Rerun on 22 Nov 2026 (Provisioning `main`, 324 mods plus storage, 35,619 recipes): the results
+below are unchanged. New findings: stage 8 has 5 of 7 completable milestones (below 80 %), and 8
+stage 1-2 milestones have nothing to complete. The full check takes about 2.5 minutes, too slow
+for "re-run on save" (spec 019 asks for a few seconds); speeding it up is a follow-up.
+
 ## Decisions for Brian
 
 1. Green Thumb: accept the 6 link changes above, and the `infusion_crystal` move to stage 2.
