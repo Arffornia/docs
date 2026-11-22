@@ -114,6 +114,7 @@ nav:
       - 018 UI framework: specs/018-ui-framework.md
       - 018 Stage band prototype report: specs/018-ui-framework/prototype-report.md
       - 019 Progression editor and statistics: specs/019-progression-editor-and-stats.md
+      - 020 Crates and keys: specs/020-crates-and-keys.md
   - Chantiers: chantiers.md
   - Roadmap: roadmap.md
   - Glossary: glossary.md
