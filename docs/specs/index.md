@@ -22,6 +22,7 @@ are answered, its tasks become `agent-ready` issues.
 | [017](017-progression-model/spec.md) | Progression model: stages, milestones per mod graph, Noyau modules | M3 | Accepted | — |
 | [018](018-ui-framework.md) | UI framework and one visual identity for game, website and launcher | M3 | Accepted | — |
 | [019](019-progression-editor-and-stats.md) | Progression editor, player view and statistics | M3 | Draft: needs decisions | Q1–Q5 in the spec |
+| [020](020-crates-and-keys.md) | Crates and keys: streak calendar, shop crates at spawn | M3 | Accepted | — |
 
 Specs 004–006 are in an open PR ([#1](https://github.com/Arffornia/docs/pull/1)).
 
