@@ -75,6 +75,8 @@ nav:
       - Working with AI agents: contributing/ai-agents.md
       - Diagrams: contributing/diagrams.md
       - Translations: contributing/i18n.md
+  - Runbooks:
+      - Rewards and progression prod rollout: runbooks/rewards-progression-prod-rollout.md
   - Decisions:
       - decisions/index.md
       - 0001 Record decisions: decisions/0001-record-decisions.md
