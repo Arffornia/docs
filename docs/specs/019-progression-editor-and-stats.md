@@ -41,7 +41,7 @@ Page `/stages` (`public/js/stages.js`, `StagesController`), admin role, API unde
 | Graphs | Add, edit, delete a graph: name, icon, categories | Same, plus `key`, `mod_id`, `branch` from 017 |
 | Stages | Add a stage: name, description, reward points; delete a stage | Same, plus threshold and Noyau module; reward points are removed (no points, 017) |
 | Modes | View, add node, delete node, link, unlink by clicking a link, move by dragging | Same tools, plus multi-select and keyboard shortcuts |
-| Milestone panel | Click a node: name, description, stage, reward points, unlocks and requirements with icons | Same panel, plus validation type, key items, effort, power, checks |
+| Milestone panel | Click a node: name, description, stage, reward points, unlocks and requirements with icons | Same panel, plus effort, power, checks; requirements are the only validation ([ADR 0017](../decisions/0017-milestones-complete-in-the-space-elevator.md)) |
 | Milestone edit | Edit, save, cancel: name, description, points, stage number | Same, inside the draft |
 | Unlocks | Add, edit, delete: item id, display name, image path, recipes to ban, shop price | Same, with an item picker from the recipe dump; shop price removed (Q3) |
 | Recipe of an unlock | Ingredients, results, energy, time | Same, with a recipe picker that shows the real recipe from the dump |
@@ -121,7 +121,7 @@ Priorities: **must** for the first release, **should** soon after, **could** lat
 | Feature | Priority | Notes |
 |---|---|---|
 | Search milestones, items, unlocks across all graphs; jump to the node | must | |
-| "Where is this item used": unlocks, requirements, key items | must | |
+| "Where is this item used": unlocks, requirements | must | |
 | Audit log: who changed what, when, in which draft | must | Kept with the draft and the snapshot |
 
 ### Moderation of player progressions

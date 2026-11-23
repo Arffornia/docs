@@ -21,5 +21,6 @@ the rule until a newer ADR supersedes it. Proposed ADRs wait for the maintainer.
 | [0014](0014-localize-per-player.md) | Player-facing messages are localized per player, at the last moment | Proposed |
 | [0015](0015-free-signing-and-updates.md) | Free code signing and auto-update for the launcher | Proposed |
 | [0016](0016-playtest-slots.md) | Test PRs on fixed, capped slots requested by a file | Accepted |
+| [0017](0017-milestones-complete-in-the-space-elevator.md) | Milestones complete in the Space Elevator only | Accepted |
 
 Template: copy [`template.md`](template.md), take the next number, open a PR.

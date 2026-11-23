@@ -104,12 +104,9 @@ def convert(backup: dict, source: str = "") -> tuple[dict, list[Finding]]:
     milestones = []
     for milestone in backup["milestones"]:
         requirements = [r for r in milestone.get("requirements", []) if ITEM_ID.match(r.get("item_id", ""))]
-        unlocked_items = [u["item_id"] for u in milestone.get("unlocks", []) if ITEM_ID.match(u.get("item_id", ""))]
         if requirements:
             validation = {"type": "deliver",
                           "items": [{"item": r["item_id"], "count": max(1, int(r["amount"]))} for r in requirements]}
-        elif unlocked_items:
-            validation = {"type": "obtain", "items": sorted(set(unlocked_items))}
         else:
             validation = None
         unlocks = []
@@ -175,7 +172,7 @@ def lint(model: dict) -> list[Finding]:
         if milestone["graph"] not in graphs:
             findings.append(Finding("error", "unknown_graph", key, f"graph {milestone['graph']} does not exist"))
         if milestone["validation"] is None:
-            findings.append(Finding("warning", "no_validation", key, "nothing completes this milestone"))
+            findings.append(Finding("warning", "no_validation", key, "nothing to deliver: no player can complete this milestone"))
         description = milestone.get("description", {}).get("en", "")
         if not description or description == PLACEHOLDER_DESCRIPTION:
             findings.append(Finding("info", "placeholder_description", key, "description is empty or the placeholder"))
