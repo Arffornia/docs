@@ -7,8 +7,10 @@
 `compact` reads the output of `/arffornia dump recipes` (recipes.jsonl, items.jsonl, tags.json)
 and keeps, per recipe, its input slots (item, fluid or chemical alternatives), its outputs and the
 machine that runs it. `check` replays a progression model (progression.py convert) on that graph:
-for every milestone it computes what a player can make with the milestones done before it, and
-reports what blocks it. The rules are in docs/specs/017-progression-model/completability.md.
+for every milestone it checks that a player can make the items it asks to deliver with the
+milestones done before it (ADR 0017: delivery is the only way to complete one), and reports what
+blocks it, plus unlocks the player cannot make right after. The rules are in
+docs/specs/017-progression-model/completability.md.
 Exit code 1 when a milestone is unreachable.
 """
 from __future__ import annotations
@@ -24,6 +26,7 @@ from dataclasses import dataclass, field, asdict
 ITEM, FLUID, CHEMICAL = 0, 1, 2
 CRAFTER = "arffornia:crafter_block"
 INVENTORY = "minecraft:crafting_2x2"
+SELF_DELIVERY = "the milestone asks to deliver an item it unlocks itself"
 
 # Recipe type -> the machine a player needs. None: no machine (hand, in-world, any tank).
 # Types missing here fall back to a name match and are listed as "guessed" in the report.
@@ -259,10 +262,11 @@ def compact(dump: pathlib.Path) -> dict:
     grid = {"minecraft:crafting_shaped", "minecraft:crafting_shapeless"}
     types: list[str] = []
     type_idx: dict[str, int] = {}
-    recipes = []
+    recipes, skipped = [], []
     for line in (dump / "recipes.jsonl").open(encoding="utf-8"):
         r = json.loads(line)
         if skip_type.search(r["serializer"]) or skip_type.search(r["type"]):
+            skipped.append(r["id"])
             continue
         j = r.get("json") or {}
         if r["serializer"] in grid or (r["type"].startswith("minecraft:") and r["ingredients"]) or not j:
@@ -283,6 +287,7 @@ def compact(dump: pathlib.Path) -> dict:
         in_e = [e for e in (enc(s) for s in ins) if e]
         out_e = [e for e in (enc(s) for s in outs) if e]
         if not out_e or not in_e:
+            skipped.append(r["id"])
             continue
         rtype = INVENTORY if _fits_inventory(r) else r["type"]
         if rtype not in type_idx:
@@ -304,7 +309,8 @@ def compact(dump: pathlib.Path) -> dict:
         if machine and not machines:
             source = "missing"
         type_rows.append([t, [index[(ITEM, m)] for m in machines], source])
-    return {"entries": entries, "alts": alts_tab, "types": type_rows, "recipes": recipes, "tags": tags}
+    return {"entries": entries, "alts": alts_tab, "types": type_rows, "recipes": recipes, "tags": tags,
+            "skipped_recipes": sorted(skipped)}
 
 
 def _fits_inventory(recipe: dict) -> bool:
@@ -330,7 +336,7 @@ class MilestoneResult:
     key: str
     graph: str
     stage: int
-    status: str  # ok | needs_link | unreachable
+    status: str  # ok | needs_link | unreachable | nothing_to_deliver
     blockers: dict[str, list[Blocker]] = field(default_factory=dict)
     proposed_links: list[str] = field(default_factory=list)
     links_verified: bool = False
@@ -350,8 +356,8 @@ class Pack:
         self.gated: dict[int, list[str]] = collections.defaultdict(list)
         banned: set[str] = set()
         for m in model["milestones"]:
-            for delivered in (m.get("validation") or {}).get("items", []):
-                if isinstance(delivered, dict):
+            if (m.get("validation") or {}).get("type") == "deliver":
+                for delivered in m["validation"]["items"]:
                     self._item(delivered["item"])
             for unlock in m["unlocks"]:
                 self.gated[self._item(unlock["item"])].append(m["key"])
@@ -568,23 +574,36 @@ def _missing(pack: Pack, items: list[int], done: frozenset[str]) -> dict[str, li
     return {pack.ids[x]: [pack.describe(b, done) for b in pack.blockers(x, avail, done)] for x in items if not avail[x]}
 
 
-def _blocked(pack: Pack, milestone: dict, done: frozenset[str]) -> dict[str, list[Blocker]]:
-    """Deliveries must be reachable before the milestone is done, its unlocks right after."""
-    key = milestone["key"]
+def _deliveries(pack: Pack, milestone: dict) -> list[int]:
     validation = milestone.get("validation") or {}
-    deliver = [pack._item(i["item"]) for i in validation.get("items", []) if isinstance(i, dict)]
-    unlocked = [pack._item(u["item"]) for u in milestone["unlocks"]]
-    blocked = {**_missing(pack, deliver, done - {key}), **_missing(pack, unlocked, done | {key})}
+    if validation.get("type") != "deliver":
+        return []
+    return [pack._item(i["item"]) for i in validation["items"]]
+
+
+def _blocked(pack: Pack, milestone: dict, done: frozenset[str]) -> dict[str, list[Blocker]]:
+    """ADR 0017: a milestone completes only by delivering its required items, made before it is done."""
+    key = milestone["key"]
+    deliver = _deliveries(pack, milestone)
+    blocked = _missing(pack, deliver, done - {key})
     for x in deliver:
         if pack.ids[x] in blocked and key in pack.gated.get(x, []):
-            blocked[pack.ids[x]] = [Blocker(pack.ids[x], "the milestone asks to deliver an item it unlocks itself")]
+            blocked[pack.ids[x]] = [Blocker(pack.ids[x], SELF_DELIVERY)]
     return blocked
+
+
+def _unusable(pack: Pack, milestone: dict, done: frozenset[str]) -> dict[str, list[Blocker]]:
+    """Unlocks the player cannot make right after completing the milestone: the reward is useless."""
+    return _missing(pack, [pack._item(u["item"]) for u in milestone["unlocks"]], done | {milestone["key"]})
 
 
 def check_milestone(pack: Pack, milestone: dict, strict: frozenset[str], relaxed: frozenset[str]) -> MilestoneResult:
     """`strict`: the milestone's own prerequisites. `relaxed`: every milestone a player may have done by then."""
     key, stage = milestone["key"], milestone["stage"]
     result = MilestoneResult(key, milestone["graph"], stage, "ok")
+    if not _deliveries(pack, milestone):
+        result.status = "nothing_to_deliver"
+        return result
     strict_blockers = _blocked(pack, milestone, strict)
     if not strict_blockers:
         return result
@@ -646,8 +665,15 @@ def check(graph: dict, model: dict) -> dict:
 
     all_done, none_done = pack.reach(frozenset(pack.milestones)), pack.reach(frozenset())
     gated = sorted(pack.gated)
-    leaks = [{"item": pack.ids[x], "recipe": pack.leak_recipe(x)} for x in gated if none_done[x]]
+    leaks = [{"item": pack.ids[x], "recipe": pack.leak_recipe(x), "unlocked_by": pack.gated[x]}
+             for x in gated if none_done[x]]
     never = [{"item": pack.ids[x], "unlocked_by": pack.gated[x]} for x in gated if not all_done[x]]
+    never_ids = {n["item"] for n in never}
+    unusable = []
+    for m in sorted(model["milestones"], key=lambda m: (m["stage"], m["graph"], m["key"])):
+        missing = _unusable(pack, m, open_at(m["stage"], m["key"]) | anc[m["key"]])
+        unusable += [{"milestone": m["key"], "stage": m["stage"], "item": item, "missing": [asdict(b) for b in found]}
+                     for item, found in sorted(missing.items()) if item not in never_ids]
 
     backward = []
     for m in model["milestones"]:
@@ -655,22 +681,28 @@ def check(graph: dict, model: dict) -> dict:
         if not later:
             continue
         skipped = ancestors(model, frozenset((m["key"], p) for p in later))[m["key"]]
-        without = run(m, skipped)
-        blocking = {k for found in without.blockers.values() for b in found for k in b.unlocked_by}
+        without = {**run(m, skipped).blockers, **_unusable(pack, m, skipped)}
+        blocking = {k for found in without.values() for b in found for k in b.unlocked_by}
         for parent in later:
             parent_row = pack.milestones[parent]
             if parent not in blocking:
                 own = anc[parent] - {m["key"]}
-                unlockers = {k for found in _blocked(pack, parent_row, own).values() for b in found for k in b.unlocked_by}
+                needs = {**_blocked(pack, parent_row, own), **_unusable(pack, parent_row, own)}
+                unlockers = {k for found in needs.values() for b in found for k in b.unlocked_by}
                 reverse = bool(unlockers & ({m["key"]} | skipped))
                 fix = (f"reverse it: `{parent}` requires `{m['key']}`" if reverse else "drop the link")
+                action = {"action": "reverse_requires" if reverse else "remove_requires", "milestone": m["key"],
+                          "requires": parent}
             else:
                 movable = all(pack.milestones[k]["stage"] <= m["stage"] for k in anc[parent])
                 moved = run({**parent_row, "stage": m["stage"]}, anc[parent]) if movable else None
-                fix = (f"move `{parent}` to stage {m['stage']}" if moved and moved.status != "unreachable"
-                       else f"move `{m['key']}` to stage {parent_row['stage']}")
+                target, stage = ((parent, m["stage"]) if moved and moved.status != "unreachable"
+                                 else (m["key"], parent_row["stage"]))
+                fix = f"move `{target}` to stage {stage}"
+                action = {"action": "move_stage", "milestone": target, "stage": stage}
             backward.append({"milestone": m["key"], "stage": m["stage"], "requires": parent,
-                             "requires_stage": parent_row["stage"], "needed": parent in blocking, "fix": fix})
+                             "requires_stage": parent_row["stage"], "needed": parent in blocking, "fix": fix,
+                             "fix_action": action})
 
     rows = list(results.values())
     return {
@@ -679,6 +711,8 @@ def check(graph: dict, model: dict) -> dict:
             "ok": sum(r.status == "ok" for r in rows),
             "needs_link": sum(r.status == "needs_link" for r in rows),
             "unreachable": sum(r.status == "unreachable" for r in rows),
+            "nothing_to_deliver": sum(r.status == "nothing_to_deliver" for r in rows),
+            "unusable_unlocks": len(unusable),
             "gated_items": len(gated),
             "leaks": len(leaks),
             "never_craftable": len(never),
@@ -689,6 +723,7 @@ def check(graph: dict, model: dict) -> dict:
         },
         "milestones": [asdict(r) for r in rows],
         "backward_links": backward,
+        "unusable_unlocks": unusable,
         "leaks": leaks,
         "never_craftable": never,
         "unknown_items": sorted(pack.unknown_items),
@@ -706,6 +741,8 @@ def markdown(report: dict) -> str:
         f"| Completable with their own prerequisites | {s['ok']} |",
         f"| Completable, but through a milestone that is not a prerequisite | {s['needs_link']} |",
         f"| Not completable with the stages open at that point | {s['unreachable']} |",
+        f"| Nothing to deliver, so never completed | {s['nothing_to_deliver']} |",
+        f"| Unlocks the player cannot make right after the milestone | {s['unusable_unlocks']} |",
         f"| Gated items (unlocks) | {s['gated_items']} |",
         f"| Gated items a player can make with no milestone done (leaks) | {s['leaks']} |",
         f"| Gated items never craftable, even with every milestone done | {s['never_craftable']} |",
@@ -731,6 +768,11 @@ def markdown(report: dict) -> str:
         for m in rows:
             links = ", ".join(f"`{k}`" for k in m["proposed_links"]) or "none found"
             lines.append(f"| {m['stage']} | `{m['key']}` | {links}{'' if m['links_verified'] else ' (not enough)'} |")
+        lines.append("")
+    if report["unusable_unlocks"]:
+        lines += ["### Unlocks not usable at their stage", "", "| Stage | Milestone | Unlock | Missing |", "|---|---|---|---|"]
+        lines += [f"| {u['stage']} | `{u['milestone']}` | `{u['item']}` | {_blockers(u['missing'])} |"
+                  for u in report["unusable_unlocks"]]
         lines.append("")
     if report["never_craftable"]:
         lines += ["### Never craftable", "", "| Item | Unlocked by |", "|---|---|"]

@@ -29,6 +29,7 @@ class Finding:
     code: str
     subject: str
     message: str
+    related: tuple[str, ...] = ()
 
 
 def slug(text: str) -> str:
@@ -171,21 +172,29 @@ def lint(model: dict) -> list[Finding]:
             findings.append(Finding("error", "unknown_stage", key, f"stage {milestone['stage']} does not exist"))
         if milestone["graph"] not in graphs:
             findings.append(Finding("error", "unknown_graph", key, f"graph {milestone['graph']} does not exist"))
-        if milestone["validation"] is None:
+        validation = milestone["validation"]
+        if validation is None:
             findings.append(Finding("warning", "no_validation", key, "nothing to deliver: no player can complete this milestone"))
+        elif validation.get("type") != "deliver":
+            # Snapshots published before ADR 0017 may still hold obtain or craft; the website ignores them.
+            findings.append(Finding("warning", "no_validation", key,
+                                    f"{validation.get('type')} is retired (ADR 0017), nothing to deliver: "
+                                    "no player can complete this milestone"))
         description = milestone.get("description", {}).get("en", "")
         if not description or description == PLACEHOLDER_DESCRIPTION:
             findings.append(Finding("info", "placeholder_description", key, "description is empty or the placeholder"))
         for required in milestone["requires"]:
             parent = by_key.get(required)
             if parent is None:
-                findings.append(Finding("error", "unknown_requirement", key, f"requires {required}, which does not exist"))
+                findings.append(Finding("error", "unknown_requirement", key, f"requires {required}, which does not exist",
+                                        (required,)))
                 continue
             if parent["stage"] > milestone["stage"]:
                 findings.append(Finding("error", "requires_later_stage", key,
-                                        f"stage {milestone['stage']} requires {required} from stage {parent['stage']}"))
+                                        f"stage {milestone['stage']} requires {required} from stage {parent['stage']}",
+                                        (required,)))
             if parent["graph"] != milestone["graph"]:
-                findings.append(Finding("info", "cross_graph", key, f"requires {required} from another graph"))
+                findings.append(Finding("info", "cross_graph", key, f"requires {required} from another graph", (required,)))
 
     findings.extend(_cycles(by_key))
 
@@ -206,7 +215,7 @@ def _cycles(by_key: dict[str, dict]) -> list[Finding]:
                 continue
             if state.get(required) == "open":
                 cycle = path[path.index(required):] + [required] if required in path else [key, required]
-                findings.append(Finding("error", "cycle", key, " -> ".join(cycle)))
+                findings.append(Finding("error", "cycle", key, " -> ".join(cycle), tuple(cycle[:-1])))
             elif required not in state:
                 visit(required, path + [required])
         state[key] = "done"

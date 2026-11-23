@@ -1,4 +1,4 @@
-# Completability of the current tree (9 Nov 2026)
+# Completability of the current tree
 
 | | |
 |---|---|
@@ -7,8 +7,9 @@
 | **Tool** | [`scripts/recipe_graph.py`](https://github.com/Arffornia/docs/blob/main/scripts/recipe_graph.py), `make progression-check DUMP=<dir>` (about 2 minutes) |
 
 The lint of [spec 017](spec.md) checks the shape of the tree. This check replays the tree on the
-real recipes of the pack: for every milestone, can a player make what it unlocks with the stages
-open at that point?
+real recipes of the pack: for every milestone, can a player make the items it asks to deliver to
+the Space Elevator with the stages open at that point? Since [ADR 0017](../../decisions/0017-milestones-complete-in-the-space-elevator.md)
+delivery is the only way to complete a milestone; owning or crafting its unlock never counts.
 
 ## Summary
 
@@ -56,7 +57,8 @@ converted tree, these changes give 0 backward links and `tier_4`, `again_and_aga
 | World resource | An item no recipe makes, plus natural tags (ores, raw materials, logs, crops, stones...) and a short list (diamond, redstone, buckets of water and lava, AE2 meteorite presses...). A gated item is never a world resource. Creative items and spawn eggs never are |
 | Other sources | Growing a Mystical Agriculture seed gives its essence; a few block drops and machines that are not recipe types (JDT raw ores, AE2 condenser, PNC UV light box) |
 | Fluids | Fluids and chemicals with the same id are one node. A fluid tag joins the fluid of the same name, otherwise it counts as a world resource (32 tags, listed in the JSON) |
-| Milestone | Items to deliver must be reachable before the milestone is done, its unlocks right after |
+| Milestone | Completable when every item to deliver is reachable before it is done. A milestone with nothing to deliver is never completed |
+| Unlock check | Separate from completability, as a warning: an unlock the player cannot make right after its milestone is a useless reward |
 | Strict check | Only the milestone's own prerequisites are done |
 | Relaxed check | Its prerequisites and every milestone of its stage and earlier stages are done, except its own descendants (optimistic: ignores the 80 % threshold and the Noyau module) |
 | Missing items | Greedy, depth-limited search for a small set of gated items that explains the failure. Not always minimal |
@@ -66,6 +68,76 @@ Known gaps: loot, mob drops, villager and Amadron trades, rituals and multiblock
 not recipes. Some "never craftable" items may come from such a source (cyanite seeds need the
 Extreme Reactors reprocessor multiblock). Each new source is one line in `EXTRA_SOURCES` or
 `WORLD_ITEMS`.
+
+## Editor checks (spec 019)
+
+`scripts/progression_check.py` runs the lint of spec 017 and this check, and writes one JSON
+document for the badges of the editor ([spec 019](../019-progression-editor-and-stats.md),
+"Inline checks from the graph tool"). `make progression-check DUMP=<dir>` writes it to
+`/tmp/arffornia-checks.json`; `MODEL=<file>` checks a published snapshot instead of the 31 Jul
+tree, e.g. `curl -o model.json https://staging.arffornia.com/api/progression/model`. Same input,
+same bytes out.
+
+```json
+{
+ "format": "arffornia.progression-check/1",
+ "completability": "done",
+ "summary": {"milestones": 194, "ok": 15, "warning": 170, "error": 9, "by_code": {"leak": 21}},
+ "milestones": {
+  "mekanism/mekanism_fundamentals": {
+   "badge": "warning", "graph": "mekanism", "stage": 1,
+   "findings": [{"severity": "warning", "code": "unlock_unusable", "item": "mekanism:pressurized_reaction_chamber",
+                 "message": "...", "missing": [{"item": "mekanism:basic_chemical_tank", "reason": "gated",
+                 "unlocked_by": ["mekanism/mekanism_basic_tank"]}],
+                 "fixes": [{"action": "move_stage", "milestone": "mekanism/mekanism_fundamentals", "stage": 2}]}]
+  }
+ },
+ "stages": {"8": {"badge": "error", "findings": [{"code": "threshold_unreachable", "...": "..."}]}},
+ "pack": []
+}
+```
+
+Every milestone has an entry. The badge is the worst severity of its findings; `info` never
+changes it. A finding may carry `fixes`, actions the editor can offer or show as ghost links:
+`add_requires`, `remove_requires`, `reverse_requires` (the other milestone requires this one),
+`move_stage`, `ban_recipe`.
+
+| Code | Severity | Meaning |
+|---|---|---|
+| `cycle`, `unknown_requirement`, `duplicate_key` | error | The requires graph is broken; completability is skipped |
+| `requires_later_stage` | error | Backward link, with `needed_by_recipes` and the fix |
+| `not_completable` | error | A required item cannot be made with the stages open at that point |
+| `delivers_own_unlock` | error | Asks to deliver an item it unlocks itself |
+| `never_craftable` | error | Unlocks an item no player can make, even with every milestone done |
+| `unknown_item` | error | An unlock or delivery is not in the recipe dump |
+| `threshold_unreachable` | error (stage) | Fewer completable milestones than the stage threshold |
+| `missing_link` | warning | Completable only through a milestone it does not require |
+| `unlock_unusable` | warning | An unlock cannot be made right after the milestone, at its stage; fix: move the milestone |
+| `leak` | warning | A recipe that is not banned still makes the gated item |
+| `unknown_ban` | warning, info | A banned recipe id is not in the dump. Info when another ban of the same unlock exists |
+| `no_validation` | warning | Nothing to deliver: the milestone can never be completed, and counts against the threshold |
+| `cross_graph`, `placeholder_description` | info | |
+
+Rerun on 23 Nov 2026 with the single-path rule (ADR 0017), same dump (Provisioning `main`, 324
+mods plus storage, 35,619 recipes), on the live staging model (`/api/progression/model`, version 1)
+and on the 31 Jul tree: both give the same result, because the live model only adds `obtain`
+validations, which are retired and ignored.
+
+| | Count |
+|---|---|
+| Milestones with items to deliver | 28 of 194 |
+| Completable with their own prerequisites | 19 |
+| Completable through a milestone that is not a prerequisite | 5 |
+| Not completable at their stage | 4 |
+| Nothing to deliver, never completed (`no_validation`) | 166 |
+| Unlocks not usable right after their milestone (`unlock_unusable`) | 22 |
+| Badges | 9 error, 170 warning, 15 ok |
+
+Every stage is below its threshold until the 166 milestones get items to deliver. The summary
+and results below are the 9 Nov run, when a milestone without deliveries counted as completed by
+making its unlocks; they stay as the record of the unlock analysis. The full check takes about 2.5
+minutes, too slow for "re-run on save" (spec 019 asks for a few seconds); speeding it up is a
+follow-up.
 
 ## Decisions for Brian
 
