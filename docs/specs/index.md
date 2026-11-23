@@ -9,7 +9,7 @@ are answered, its tasks become `agent-ready` issues.
 | [001](001-recipes-datapack.md) | Machine recipes as a datapack, with stage gating | M3 | Accepted with open points | D3a, D3b, D7 ([#14](https://github.com/Arffornia/Arffornia_Mods/issues/14), [#16](https://github.com/Arffornia/Arffornia_Mods/issues/16), [#18](https://github.com/Arffornia/Arffornia_Mods/issues/18)) |
 | [002](002-machine-framework.md) | Machine framework and multiblocks | M3 | Accepted direction | D2–D9, art direction research ([#17](https://github.com/Arffornia/Arffornia_Mods/issues/17)) |
 | [003](003-machine-tier-plan.md) | Machine tier plan (Satisfactory-inspired) | M3 | Proposal, tiers and mod placement superseded by 017 | machines and parts still a reference |
-| [007](007-loading-and-title-screen.md) | Loading screen and title screen (animated factory, previews) | M3 | Draft: needs decisions | D1–D8 in the spec |
+| [007](007-loading-and-title-screen.md) | Loading screen and title screen (animated factory, previews) | M3 | Implemented, in review | D6, D8 to confirm |
 | [008](008-economy-and-rewards.md) | Economy, shop and rewards | M3 | Draft: needs decisions | D1–D7 (starting money default 500) |
 | [009](009-ranks-roles-permissions.md) | Ranks, roles, cosmetics and permissions | M3 | Draft: needs decisions | D1–D6 |
 | [010](010-vote-sites.md) | Vote sites | M3 | Draft: needs decisions | D1–D5 |

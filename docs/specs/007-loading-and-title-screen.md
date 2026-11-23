@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft: needs decisions |
+| **Status** | Implemented, in review (2026-11-23): items 2-10 in open PRs, owner test pending; D6 and D8 to confirm |
 | **Milestone** | M3 · Gameplay foundations (client polish; no gameplay dependency) |
 | **Repos** | Arffornia_Mods (early-window jar, title screen, test hooks), Arffornia_Launcher (splash and handoff), Arffornia_Provisioning (`fml.toml`, mod list) |
 | **Related** | [002](002-machine-framework.md) (machines), [003](003-machine-tier-plan.md) (tiers, palette), research specs in [docs#1](https://github.com/Arffornia/docs/pull/1): [004 in-game testing](https://github.com/Arffornia/docs/blob/docs/tooling-research/docs/specs/004-in-game-e2e-testing.md), [005 3D models](https://github.com/Arffornia/docs/blob/docs/tooling-research/docs/specs/005-3d-model-pipeline.md), [006 GUI design system](https://github.com/Arffornia/docs/blob/docs/tooling-research/docs/specs/006-gui-design-system.md) |
@@ -480,7 +480,7 @@ Options…), and D12 is only about their surface:
 | D9 | Web-rendered menus | (a) native screens, TesseraUI for menus/GUIs; (b) MCEF/WebGUI for all menus; (c) MCEF only for content pages | **(a)** |
 | D4 | Launcher splash to cover JVM start | (a) yes, after the Electron upgrade; (b) no | **(a)** |
 | D5 | Third-party art currently shipped in `config/fancymenu/assets` | (a) remove now; (b) keep until replaced | **(a)** |
-| D6 | Which machines appear before their models exist | (a) tiers 0–3 as teasers, mocks replaced as 005 models land; (b) only released machines | **(a)** |
+| D6 | Which machines appear before their models exist | (a) tiers 0–3 as teasers, mocks replaced as 005 models land; (b) only released machines | **(a), applied in the build, to confirm**: both screens show the tier 0–3 mocks from Arffornia_Assets |
 | D7 | Small "Mojang Studios" credit on the loading screen | (a) keep, small; (b) remove | **Decided: the Usage Guidelines disclaimer on every screen with the brand** (round 3); the title keeps the vanilla copyright line |
 | D10 | Early-window sheet size | (a) 1:1, 60 frames, now 480×288 cells in a 2880×2880 sheet (33 MB VRAM, round 4 framing fix); (b) 640×240, 30 frames at 10 fps logic, held 2 ticks (18 MB); (c) 427×240 upscaled (25 MB, soft) | **(a)** for the first build; switch to (b) if a low-end report shows a slow first frame |
 | D11 | Title background colour | (a) the night render graded to plum in the screen (no extra render); (b) a dedicated "launcher" look in the renderer | **(a)** now; (b) once the machine art direction is picked and the scene is re-rendered anyway |
@@ -491,7 +491,37 @@ Options…), and D12 is only about their surface:
 | D16 | Variety on the loading screen | (a) "Did you know?" card, one machine close-up per tip, 8 s each, Night Shift scene unchanged; (b) the main camera visits each machine as it powers on; (c) text tips only | **Decided (round 4b): (a)**: variety without touching the scene Brian wants kept; (b) would change Night Shift |
 | D17 | Keyboard navigation | (a) spatial (nearest tile within ±60°, upper on a tie), Play pre-selected, hover and keys share one selection; (b) a fixed ring order | **Decided (round 4b): (a)**: arrows go where the tile is; works for any future tile layout |
 | D18 | Early-window line under the title | (a) the MOTD cached by the last title screen, the banner tagline on first launch; (b) the tagline always | **Decided (round 4b): (a)**: same message as the title splash and the server list, no network before Minecraft starts |
-| D8 | UI test cadence | (a) label `ui` + nightly; (b) every PR | **(a)**, as in 004 |
+| D8 | UI test cadence | (a) label `ui` + nightly; (b) every PR | **(a), applied in the build, to confirm**: `ui-tests.yml` |
+
+## Implementation (2026-11-23)
+
+Built from the decided rounds (D1 Night Shift scene, D1b honeycomb in launcher colours, D3 own provider at
+20 fps, D4 launcher splash, D7 disclaimer, D9 native, D10–D18 as recommended or decided). D6 and D8 took the
+recommendation and wait for confirmation. The owner tests the PRs in one batch.
+
+| Part | Where | PR | What it does |
+|---|---|---|---|
+| Baked inputs | Arffornia_Assets | [Assets#9](https://github.com/Arffornia/Arffornia_Assets/pull/9) | `early/line.mjs` sheet (60 × 480×288, 20 fps), `early/window-line.mjs` layers at 1x and 2x, `ui/title/background.mjs` (night factory graded to plum, D11 a). The Assets pipeline is the baker (item 2); the mod vendors its outputs |
+| Early window | Arffornia_Mods `earlywindow/` | [Mods#87](https://github.com/Arffornia/Arffornia_Mods/pull/87) | `arffornia-earlywindow.jar`, `ArfforniaEarlyWindow extends DisplayWindow`, round 4b layout, live EN/FR text from `options.txt`, MOTD line (D18), monotonic bar from FML's progress bars, `FIRST_FRAME` stdout marker, `testClock`. Verified in a real dev client |
+| Title screen | Arffornia_Mods `client/screen/title/` | [Mods#88](https://github.com/Arffornia/Arffornia_Mods/pull/88) | `ArfTitleScreen` via `ScreenEvent.Opening`: honeycomb, extruded tiles (D12 a), MOTD splash (D13–D15), spatial keys (D17), server ping of the first listed server, progression card, 3 s timeouts |
+| Screen tests | Arffornia_Mods | [Mods#89](https://github.com/Arffornia/Arffornia_Mods/pull/89) | `make screens`: layer 1 (provider alone) + layer 2 (`clientScreens` dev run, EN/FR, GUI 2 and 4), baselines, 1 % limit, `ui-tests.yml` (D8 a) |
+| Launcher splash | Arffornia_Launcher_V.5.2 | [Launcher#107](https://github.com/Arffornia/Arffornia_Launcher_V.5.2/pull/107) | Night Shift canvas with the "Did you know?" card (D16), 854×480 at the early window's place, hides on `FIRST_FRAME`, exit or 60 s |
+| Shipping | Arffornia_Provisioning | [Provisioning#65](https://github.com/Arffornia/Arffornia_Provisioning/pull/65) | `config/fml.toml`, provider jar in the launcher list, FancyMenu, Drippy and Melody removed. Merged only after the Mods PRs and a release |
+
+Differences from the design above, on purpose:
+
+- **One implementation, no fallbacks** (owner rule): no `arffornia-earlywindow.toml` (`direction`, `maxFps`,
+  `reducedMotion`), no `titleScreen.enabled` switch back to vanilla, no fallback to FML's stock elements.
+- **No power-on timeline** in the early window: the decided round 4b window is one baked loop of the whole line.
+- **Title diorama is the baked render**, not real-time block models: the tier 0–3 machines are not blocks yet (D6).
+- **Cards**: Play joins the first server of `servers.dat` (written by the launcher, so it follows the chosen
+  environment); progress comes from `GET /players/{uuid}/progression/state`; News opens the website's `/news`
+  page because the website has no news API.
+- **Fonts**: Chakra Petch (OFL) everywhere in game; Montserrat is only available as woff2 in Assets.
+
+Open questions for the owner: D6 and D8 confirmation; Multiplayer and Realms entries (not on the mock-up);
+a news endpoint; the stage bar on the Milestones tile; when the launcher splash should open relative to
+MCLC's own asset check (Launcher#107).
 
 ## Work breakdown
 
