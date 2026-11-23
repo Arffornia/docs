@@ -53,6 +53,7 @@ def model(*milestones):
 
 
 CRAFTER = ("minecraft:crafting", ["mod:plank"], [rg.CRAFTER], "arffornia:crafter_block")
+PRODUCT = ("minecraft:crafting", ["mod:machine"], ["mod:product"], "product")
 
 
 def statuses(report):
@@ -97,11 +98,11 @@ class ReachTest(unittest.TestCase):
 
 
 class CheckTest(unittest.TestCase):
-    def test_reports_a_milestone_whose_unlock_needs_a_later_stage(self):
+    def test_reports_a_milestone_whose_delivery_needs_a_later_stage(self):
         # Arrange
-        g = graph([CRAFTER])
-        m = model(milestone("m/machine", 2, unlocks=[("mod:machine", ["mod:ore"], [])]),
-                  milestone("m/use", 1, unlocks=[("mod:product", ["mod:machine"], [])]))
+        g = graph([CRAFTER, PRODUCT])
+        m = model(milestone("m/machine", 2, unlocks=[("mod:machine", ["mod:ore"], [])], deliver=["mod:ore"]),
+                  milestone("m/use", 1, deliver=["mod:product"]))
 
         # Act
         report = rg.check(g, m)
@@ -111,9 +112,9 @@ class CheckTest(unittest.TestCase):
 
     def test_names_the_missing_item_and_the_milestone_that_unlocks_it(self):
         # Arrange
-        g = graph([CRAFTER])
-        m = model(milestone("m/machine", 2, unlocks=[("mod:machine", ["mod:ore"], [])]),
-                  milestone("m/use", 1, unlocks=[("mod:product", ["mod:machine"], [])]))
+        g = graph([CRAFTER, PRODUCT])
+        m = model(milestone("m/machine", 2, unlocks=[("mod:machine", ["mod:ore"], [])], deliver=["mod:ore"]),
+                  milestone("m/use", 1, deliver=["mod:product"]))
 
         # Act
         use = next(r for r in rg.check(g, m)["milestones"] if r["key"] == "m/use")
@@ -124,9 +125,9 @@ class CheckTest(unittest.TestCase):
 
     def test_proposes_a_link_when_only_a_non_prerequisite_makes_it_completable(self):
         # Arrange
-        g = graph([CRAFTER])
-        m = model(milestone("m/machine", 1, unlocks=[("mod:machine", ["mod:ore"], [])]),
-                  milestone("m/use", 2, unlocks=[("mod:product", ["mod:machine"], [])]))
+        g = graph([CRAFTER, PRODUCT])
+        m = model(milestone("m/machine", 1, unlocks=[("mod:machine", ["mod:ore"], [])], deliver=["mod:ore"]),
+                  milestone("m/use", 2, deliver=["mod:product"]))
 
         # Act
         use = next(r for r in rg.check(g, m)["milestones"] if r["key"] == "m/use")
@@ -193,6 +194,43 @@ class CheckTest(unittest.TestCase):
         self.assertEqual([{"item": "mod:controller", "unlocked_by": ["m/line"]}], never)
 
 
+class SinglePathTest(unittest.TestCase):
+    def test_a_milestone_without_deliveries_is_never_completed_by_its_unlock(self):
+        # Arrange
+        g = graph([CRAFTER])
+        m = model(milestone("m/a", 1, unlocks=[("mod:gear", ["mod:ore"], [])]))
+
+        # Act
+        report = rg.check(g, m)
+
+        # Assert
+        self.assertEqual("nothing_to_deliver", statuses(report)["m/a"])
+
+    def test_an_unlock_gated_later_does_not_block_completion(self):
+        # Arrange
+        g = graph([CRAFTER])
+        m = model(milestone("m/machine", 2, unlocks=[("mod:machine", ["mod:ore"], [])], deliver=["mod:ore"]),
+                  milestone("m/use", 1, unlocks=[("mod:product", ["mod:machine"], [])], deliver=["mod:ore"]))
+
+        # Act
+        report = rg.check(g, m)
+
+        # Assert
+        self.assertEqual("ok", statuses(report)["m/use"])
+
+    def test_reports_an_unlock_the_player_cannot_make_right_after_the_milestone(self):
+        # Arrange
+        g = graph([CRAFTER])
+        m = model(milestone("m/machine", 2, unlocks=[("mod:machine", ["mod:ore"], [])], deliver=["mod:ore"]),
+                  milestone("m/use", 1, unlocks=[("mod:product", ["mod:machine"], [])], deliver=["mod:ore"]))
+
+        # Act
+        unusable = rg.check(g, m)["unusable_unlocks"]
+
+        # Assert
+        self.assertEqual([("m/use", "mod:product")], [(u["milestone"], u["item"]) for u in unusable])
+
+
 class ReviewRegressionTest(unittest.TestCase):
     def test_a_delivery_of_an_item_missing_from_the_pack_is_reported_not_raised(self):
         # Arrange
@@ -208,8 +246,8 @@ class ReviewRegressionTest(unittest.TestCase):
 
     def test_never_proposes_a_link_to_a_descendant(self):
         # Arrange
-        g = graph([CRAFTER])
-        m = model(milestone("m/a", 2, unlocks=[("mod:gem", ["mod:seed"], [])]),
+        g = graph([CRAFTER, ("minecraft:crafting", ["mod:seed"], ["mod:gem"], "gem")])
+        m = model(milestone("m/a", 2, deliver=["mod:gem"]),
                   milestone("m/b", 2, unlocks=[("mod:seed", ["mod:ore"], [])], requires=["m/a"]))
 
         # Act
@@ -223,7 +261,7 @@ class ReviewRegressionTest(unittest.TestCase):
         g = graph([CRAFTER, ("minecraft:crafting", ["mod:crystal"], ["mod:gear"], "gear_from_crystal")])
         m = model(milestone("m/z", 5, unlocks=[("mod:gear", ["mod:ore"], [])]),
                   milestone("m/b", 1, unlocks=[("mod:crystal", ["mod:ore"], [])]),
-                  milestone("m/a", 2, unlocks=[("mod:product", ["mod:gear"], [])]))
+                  milestone("m/a", 2, deliver=["mod:gear"]))
 
         # Act
         a = next(r for r in rg.check(g, m)["milestones"] if r["key"] == "m/a")

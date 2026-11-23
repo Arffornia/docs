@@ -76,6 +76,14 @@ class LintTest(unittest.TestCase):
 
         self.assertTrue(codes(progression.lint(model), "unknown_requirement"))
 
+    def test_warns_that_a_retired_obtain_validation_completes_nothing(self):
+        model = copy.deepcopy(self.model)
+        model["milestones"][0]["validation"] = {"type": "obtain", "items": ["minecraft:dirt"]}
+
+        found = [f for f in progression.lint(model) if f.subject == model["milestones"][0]["key"]]
+
+        self.assertIn("no_validation", [f.code for f in found])
+
 
 @unittest.skipIf(jsonschema is None, "jsonschema not installed")
 class SchemaTest(unittest.TestCase):

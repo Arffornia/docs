@@ -2,7 +2,7 @@ import json
 import unittest
 
 import progression_check as pc
-from test_recipe_graph import CRAFTER, graph, milestone
+from test_recipe_graph import CRAFTER, PRODUCT, graph, milestone
 
 
 def full_model(*milestones, stages=3, threshold=0.8):
@@ -52,24 +52,24 @@ class LintOnlyTest(unittest.TestCase):
 
 
 class CompletabilityTest(unittest.TestCase):
-    def test_an_unlock_that_needs_a_machine_gated_later_is_not_completable(self):
+    def test_a_delivery_that_needs_a_machine_gated_later_is_not_completable(self):
         # Arrange
-        m = full_model(milestone("m/machine", 2, unlocks=[("mod:machine", ["mod:ore"], [])]),
-                       milestone("m/use", 1, unlocks=[("mod:product", ["mod:machine"], [])]))
+        m = full_model(milestone("m/machine", 2, unlocks=[("mod:machine", ["mod:ore"], [])], deliver=["mod:ore"]),
+                       milestone("m/use", 1, deliver=["mod:product"]))
 
         # Act
-        doc = pc.build(m, graph([CRAFTER]))
+        doc = pc.build(m, graph([CRAFTER, PRODUCT]))
 
         # Assert
         self.assertIn("not_completable", codes(doc, "m/use"))
 
     def test_proposes_moving_the_milestone_to_the_stage_of_the_machine(self):
         # Arrange
-        m = full_model(milestone("m/machine", 2, unlocks=[("mod:machine", ["mod:ore"], [])]),
-                       milestone("m/use", 1, unlocks=[("mod:product", ["mod:machine"], [])]))
+        m = full_model(milestone("m/machine", 2, unlocks=[("mod:machine", ["mod:ore"], [])], deliver=["mod:ore"]),
+                       milestone("m/use", 1, deliver=["mod:product"]))
 
         # Act
-        found = next(f for f in pc.build(m, graph([CRAFTER]))["milestones"]["m/use"]["findings"]
+        found = next(f for f in pc.build(m, graph([CRAFTER, PRODUCT]))["milestones"]["m/use"]["findings"]
                      if f["code"] == "not_completable")
 
         # Assert
@@ -89,8 +89,8 @@ class CompletabilityTest(unittest.TestCase):
 
     def test_a_sibling_dependency_is_a_warning_with_the_link_to_add(self):
         # Arrange
-        m = full_model(milestone("m/gears", 1, unlocks=[("mod:gear", ["mod:ore"], [])]),
-                       milestone("m/use", 1, unlocks=[("mod:product", ["mod:gear"], [])]))
+        m = full_model(milestone("m/gears", 1, unlocks=[("mod:gear", ["mod:ore"], [])], deliver=["mod:ore"]),
+                       milestone("m/use", 1, deliver=["mod:gear"]))
 
         # Act
         doc = pc.build(m, graph([CRAFTER]))
@@ -166,14 +166,38 @@ class CompletabilityTest(unittest.TestCase):
 
     def test_a_stage_below_its_threshold_is_an_error(self):
         # Arrange
-        m = full_model(milestone("m/machine", 2, unlocks=[("mod:machine", ["mod:ore"], [])]),
-                       milestone("m/use", 1, unlocks=[("mod:product", ["mod:machine"], [])]))
+        m = full_model(milestone("m/machine", 2, unlocks=[("mod:machine", ["mod:ore"], [])], deliver=["mod:ore"]),
+                       milestone("m/use", 1, deliver=["mod:product"]))
+
+        # Act
+        doc = pc.build(m, graph([CRAFTER, PRODUCT]))
+
+        # Assert
+        self.assertEqual(["threshold_unreachable"], [f["code"] for f in doc["stages"]["1"]["findings"]])
+
+
+    def test_a_milestone_with_nothing_to_deliver_counts_against_the_threshold(self):
+        # Arrange
+        m = full_model(milestone("m/a", 1, unlocks=[("mod:gear", ["mod:ore"], [])]))
 
         # Act
         doc = pc.build(m, graph([CRAFTER]))
 
         # Assert
         self.assertEqual(["threshold_unreachable"], [f["code"] for f in doc["stages"]["1"]["findings"]])
+
+    def test_an_unlock_gated_later_is_a_warning_with_a_move_fix(self):
+        # Arrange
+        m = full_model(milestone("m/machine", 2, unlocks=[("mod:machine", ["mod:ore"], [])], deliver=["mod:ore"]),
+                       milestone("m/use", 1, unlocks=[("mod:product", ["mod:machine"], [])], deliver=["mod:ore"]))
+
+        # Act
+        found = next(f for f in pc.build(m, graph([CRAFTER]))["milestones"]["m/use"]["findings"]
+                     if f["code"] == "unlock_unusable")
+
+        # Assert
+        self.assertEqual(("warning", [{"action": "move_stage", "milestone": "m/use", "stage": 2}]),
+                         (found["severity"], found["fixes"]))
 
 
 class OutputTest(unittest.TestCase):

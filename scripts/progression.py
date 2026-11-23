@@ -172,8 +172,14 @@ def lint(model: dict) -> list[Finding]:
             findings.append(Finding("error", "unknown_stage", key, f"stage {milestone['stage']} does not exist"))
         if milestone["graph"] not in graphs:
             findings.append(Finding("error", "unknown_graph", key, f"graph {milestone['graph']} does not exist"))
-        if milestone["validation"] is None:
+        validation = milestone["validation"]
+        if validation is None:
             findings.append(Finding("warning", "no_validation", key, "nothing to deliver: no player can complete this milestone"))
+        elif validation.get("type") != "deliver":
+            # Snapshots published before ADR 0017 may still hold obtain or craft; the website ignores them.
+            findings.append(Finding("warning", "no_validation", key,
+                                    f"{validation.get('type')} is retired (ADR 0017), nothing to deliver: "
+                                    "no player can complete this milestone"))
         description = milestone.get("description", {}).get("en", "")
         if not description or description == PLACEHOLDER_DESCRIPTION:
             findings.append(Finding("info", "placeholder_description", key, "description is empty or the placeholder"))

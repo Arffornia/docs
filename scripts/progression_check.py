@@ -94,21 +94,17 @@ def build(model: dict, graph: dict | None) -> dict:
 
 def _completability(model, graph, by_key, per_milestone, per_stage, pack_level) -> None:
     report = rg.check(graph, model)
-    never = {n["item"] for n in report["never_craftable"]}
-
     for row in report["milestones"]:
         key = row["key"]
         if row["status"] == "unreachable":
             for item, blockers in sorted(row["blockers"].items()):
-                if item in never:
-                    continue
                 if any(b["reason"] == rg.SELF_DELIVERY for b in blockers):
                     per_milestone[key].append(finding(
                         "error", "delivers_own_unlock", f"asks to deliver {item}, which it unlocks itself", item=item))
                     continue
                 per_milestone[key].append(finding(
                     "error", "not_completable",
-                    f"{item} cannot be made with the stages open at stage {row['stage']}: {_explain(blockers)}",
+                    f"required item {item} cannot be made with the stages open at stage {row['stage']}: {_explain(blockers)}",
                     item=item, missing=blockers, fixes=_move_fixes(key, blockers, by_key)))
         elif row["status"] == "needs_link":
             items = sorted(row["blockers"])
@@ -120,6 +116,12 @@ def _completability(model, graph, by_key, per_milestone, per_stage, pack_level) 
             fixes = [{"action": "add_requires", "milestone": key, "requires": links,
                       "verified": row["links_verified"]}] if links else []
             per_milestone[key].append(finding("warning", "missing_link", message, items=items, fixes=fixes))
+
+    for u in report["unusable_unlocks"]:
+        per_milestone[u["milestone"]].append(finding(
+            "warning", "unlock_unusable",
+            f"unlocks {u['item']}, which cannot be made right after it at stage {u['stage']}: {_explain(u['missing'])}",
+            item=u["item"], missing=u["missing"], fixes=_move_fixes(u["milestone"], u["missing"], by_key)))
 
     for b in report["backward_links"]:
         for f in per_milestone[b["milestone"]]:
@@ -143,8 +145,9 @@ def _completability(model, graph, by_key, per_milestone, per_stage, pack_level) 
     unknown = set(report["unknown_items"])
     recipe_ids = {row[3] for row in graph["recipes"]} | set(graph.get("skipped_recipes", []))
     for m in model["milestones"]:
-        referenced = [u["item"] for u in m["unlocks"]] + [
-            i["item"] for i in (m.get("validation") or {}).get("items", []) if isinstance(i, dict)]
+        validation = m.get("validation") or {}
+        referenced = [u["item"] for u in m["unlocks"]] + (
+            [i["item"] for i in validation["items"]] if validation.get("type") == "deliver" else [])
         for item in sorted(set(referenced) & unknown):
             per_milestone[m["key"]].append(finding("error", "unknown_item", f"{item} is not in the recipe dump", item=item))
         for unlock in m["unlocks"]:
@@ -161,7 +164,7 @@ def _completability(model, graph, by_key, per_milestone, per_stage, pack_level) 
         rows = [k for k, m in by_key.items() if m["stage"] == stage["number"]]
         if not rows:
             continue
-        completable = sum(status[k] != "unreachable" for k in rows)
+        completable = sum(status[k] in ("ok", "needs_link") for k in rows)
         if completable / len(rows) < stage["threshold"]:
             per_stage[stage["number"]].append(finding(
                 "error", "threshold_unreachable",
