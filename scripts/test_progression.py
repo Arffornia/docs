@@ -45,6 +45,10 @@ class ConvertCurrentTreeTest(unittest.TestCase):
         delivered = [m for m in self.model["milestones"] if m["validation"] and m["validation"]["type"] == "deliver"]
         self.assertEqual(28, len(delivered))
 
+    def test_milestones_without_requirements_have_nothing_to_validate_them(self):
+        undelivered = [m for m in self.model["milestones"] if not m["validation"]]
+        self.assertEqual(len(self.model["milestones"]) - 28, len(undelivered))
+
 
 class LintTest(unittest.TestCase):
     def setUp(self):
@@ -94,6 +98,12 @@ class SchemaTest(unittest.TestCase):
     def test_rejects_a_threshold_above_one(self):
         model = copy.deepcopy(self.model)
         model["stages"][0]["threshold"] = 1.5
+
+        self.assertFalse(self.validator.is_valid(model))
+
+    def test_rejects_the_retired_obtain_validation(self):
+        model = copy.deepcopy(self.model)
+        model["milestones"][0]["validation"] = {"type": "obtain", "items": ["minecraft:dirt"]}
 
         self.assertFalse(self.validator.is_valid(model))
 
