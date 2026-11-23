@@ -133,7 +133,8 @@ validations, which are retired and ignored.
 | Unlocks not usable right after their milestone (`unlock_unusable`) | 22 |
 | Badges | 9 error, 170 warning, 15 ok |
 
-Every stage is below its threshold until the 166 milestones get items to deliver. The summary
+Every stage is below its threshold until the 166 milestones get items to deliver. The fixes for Brian are in the
+[fix batch of Nov 2026](fix-batch-2026-11.md). The summary
 and results below are the 9 Nov run, when a milestone without deliveries counted as completed by
 making its unlocks; they stay as the record of the unlock analysis. The full check takes about 2.5
 minutes, too slow for "re-run on save" (spec 019 asks for a few seconds); speeding it up is a
