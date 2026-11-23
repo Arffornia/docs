@@ -86,7 +86,7 @@ The window between steps 9 and 12 must be short: a pod restart in it loads the n
 | 13 | Restart Arcane so the pod pulls the new jar and datapack. Watch the log for datapack load and no advancement errors | `kubectl -n arffornia-server-arcane rollout restart deploy/arffornia-server-arcane-minecraft` | Brian |
 | 14 | Bring the site back | `php artisan up` (same `kubectl exec` prefix) | Brian |
 
-Provisioning needs no PR for the jar: `modList.json` already pins `tag: latest`. A Provisioning PR is only needed if Brian prefers a fixed tag (see decisions). Provisioning `main` is live for every player, so never mix content and tooling in that PR.
+Provisioning needs no PR for the jar: `modList.json` already pins `tag: latest`. Decision 1 keeps it that way. Provisioning `main` is live for every player, so never mix content and tooling in that PR.
 
 ### Phase C: keys and crates
 
@@ -110,14 +110,16 @@ Provisioning needs no PR for the jar: `modList.json` already pins `tag: latest`.
 
 Database restore: scale the website to zero, `pg_restore --clean --if-exists -d arffornia <dump>` on the master, scale back. WAL-G point-in-time recovery is the fallback if the dump is bad.
 
-## Decisions for Brian
+## Decisions
 
-| # | Decision | Options | Recommendation |
-|---|---|---|---|
-| 1 | Pin the mod in Provisioning | keep `latest` (zero change, release equals ship) or pin `v1.0.26` in `modList.json` for server only | keep `latest` for now. Release only inside the window |
-| 2 | Spawn crate positions | coordinates of the shop area | needed before step 15 |
-| 3 | Maintenance window | evening before 03:00 | evening |
-| 4 | Session logout on `SESSION_SERIALIZATION=json` | accept or force `php` in the ConfigMap | accept |
+Brian accepted these on 2026-11-23.
+
+| # | Decision | Choice |
+|---|---|---|
+| 1 | Pin the mod in Provisioning | keep `latest`. A mod release is published only inside the maintenance window |
+| 2 | Spawn crate positions | in the shop area at spawn, chosen in game by Brian during step 15 |
+| 3 | Maintenance window | evening, finished before 03:00 |
+| 4 | Session logout on `SESSION_SERIALIZATION=json` | accepted: every player logs in to the website once more |
 
 ## Open checks
 
