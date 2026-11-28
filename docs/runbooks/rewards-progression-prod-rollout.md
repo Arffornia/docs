@@ -77,7 +77,7 @@ The window between steps 9 and 12 must be short: a pod restart in it loads the n
 
 | # | Step | Command | Who |
 |---|---|---|---|
-| 7 | Prepare the infra PR: bump both images to the new tag. Do not touch `REWARDS_STREAK_AS_KEYS` | edit `k8s/config/arffornia/website/values.yaml`, open PR, merge after CI | Brian |
+| 7 | Prepare the infra PR: bump both images to the new tag, and the chart pin (`version: 0.1.1` in `k8s/config/arffornia/website/kustomization.yaml`) to a new `chart-X.Y.Z` tag of Arffornia_Website so the scheduler container (Website#187) runs the token and vote IP pruning. Do not touch `REWARDS_STREAK_AS_KEYS` | tag `chart-X.Y.Z` on Website main, wait for `helm-chart-builder.yml`, edit `values.yaml` and `kustomization.yaml`, open PR, merge after CI | Brian |
 | 8 | Put the site in maintenance | `kubectl -n arffornia-website exec deploy/arffornia-website-chart -c backend -- php artisan down` | Brian |
 | 9 | Argo CD syncs the new image. Wait for the pod to be ready | `kubectl -n arffornia-website rollout status deploy/arffornia-website-chart` | Brian |
 | 10 | Run migrations | `kubectl -n arffornia-website exec deploy/arffornia-website-chart -c backend -- php artisan migrate --force` | Brian |
